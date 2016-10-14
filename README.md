@@ -16,7 +16,13 @@ Nevermore has a long list features, some are in development, and others are full
 
 The version of Nevermore in this repository will be distributed by the [Installer-Plugin] for [ROBLOX]. Until then, you can follow the instructions in the [original repository](Quenty/Nevermore).
 
+## Attributions
+
+A big thanks to all the [contributors](Contributors) for their dedication to making Nevermore great. A bigger thanks to [@Quenty](Quenty) for creating and open-sourcing the original version of Nevermore.
+
 [ROBLOX]: http://roblox.com
+[Quenty]: https://github.com/Quenty
 [Nevermore]: #
+[Contributors]: https://github.com/NevermoreEngine/Nevermore/graphs/contributors
 [Quenty/Nevermore]: https://github.com/Quenty/NevermoreEngine
 [Installer-Plugin]: https://github.com/NevermoreEngine/Installation-Plugin
