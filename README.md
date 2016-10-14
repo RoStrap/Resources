@@ -6,7 +6,7 @@ Nevermore Engine is a module-loader designed to simplify the loading of librarie
 
 Nevermore has a long list features, some are in development, and others are fully implemented. These include:
 
-- [x] **OPP** - Nevermore's core components are fully *Object Oriented Programming* ready.
+- [x] **OOP** - Nevermore's core components are fully *Object Oriented Programming* ready.
 - [x] **On-request Loading** - Nevermore will only load the features you use. No more, no less.
 - [x] **Tested** - Nevermore is thoroughly tested before each release. It won't break your code.
 - [ ] **Easy Setup** - Nevermore's [installer plugin](https://github.com/NevermoreEngine/Installation-Plugin) will get Nevermore and the modules you want set up for you.
