@@ -18,7 +18,7 @@ The version of Nevermore in this repository will be distributed by the [Installe
 
 ## Attributions
 
-A big thanks to all the [contributors](Contributors) for their dedication to making Nevermore great. A bigger thanks to [@Quenty](Quenty) for creating and open-sourcing the original version of Nevermore.
+A big thanks to all the [current contributors](Contributors) and [original contributors](Original Contributors) for their dedication to making Nevermore great. A bigger thanks to [@Quenty](Quenty) for creating and open-sourcing the original version of Nevermore.
 
 [ROBLOX]: http://roblox.com
 [Quenty]: https://github.com/Quenty
@@ -26,3 +26,4 @@ A big thanks to all the [contributors](Contributors) for their dedication to mak
 [Contributors]: https://github.com/NevermoreEngine/Nevermore/graphs/contributors
 [Quenty/Nevermore]: https://github.com/Quenty/NevermoreEngine
 [Installer-Plugin]: https://github.com/NevermoreEngine/Installation-Plugin
+[Original Contributors]: https://github.com/Quenty/NevermoreEngine/graphs/contributors
