@@ -82,7 +82,7 @@ else
 		return Object
 	end
 end
-
+self.Retrieve = RetrieveObject
 local function GetFolder() return RetrieveObject(self, "Resources", script, "Folder") end -- First time use only
 
 function self:__index(index) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
