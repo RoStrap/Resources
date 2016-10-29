@@ -92,9 +92,11 @@ function self:__index(index) -- Using several strings for the same method (e.g. 
 		for a = 1, #NevermoreDescendants do
 			local Appendage = NevermoreDescendants[a]
 			if IsA(Appendage, "ModuleScript") then
-				local func = require(Appendage)
-				self["Get" .. Appendage.Name] = function(...)
-					return func(extract(...))
+				local functions = require(Appendage)
+				for index, func in next, functions do
+					self[index] = function(...)
+						return func(extract(...))
+					end
 				end
 			end
 		end
