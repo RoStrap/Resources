@@ -10,7 +10,7 @@ local Classes = { -- Allows for abbreviations
 	Function = "RemoteFunction";
 }
 
--- Optimize
+-- Optimizations
 local NewInstance = Instance.new
 local type, error, assert, select, require = type, error, assert, select, require
 local find, gsub, lower = string.find, string.gsub, string.lower
@@ -25,7 +25,7 @@ local ServerScriptService = GetService(game, "ServerScriptService")
 local self = {__metatable = "[Nevermore] Nevermore's metatable is locked"}
 local LibraryCache = {}
 local ServerModules = FindFirstChild(ServerScriptService, FolderName) or FindFirstChild(ServerScriptService, "Nevermore")
-local Appended, RetrieveObject, Repository = true
+local Appended, Retrieve, Repository = true
 
 assert(IsA(script, "ModuleScript"), "[Nevermore] Nevermore must be a ModuleScript")
 assert(script.Name ~= "ModuleScript", "[Nevermore] Nevermore was never given a name")
@@ -58,14 +58,16 @@ local function CacheAssemble(Object)
 end
 
 if RunService:IsServer() then
-	function RetrieveObject(Table, Name, Folder, Class) -- This is what allows the client / server to run the same code
-		local Object = FindFirstChild(Folder, Name) or NewInstance(Class, Folder)
-		Object.Name, Object.Archivable = Name
-		Table[Name] = Object
+	function Retrieve(Parent, Name, Class) -- This is what allows the client / server to run the same code
+		local Object = FindFirstChild(Parent, Name)
+		if not Object then
+			Object = NewInstance(Class, Parent)
+			Object.Name, Object.Archivable = Name
+		end
 		return Object
 	end
 
-	if not RunService:IsStudio() then
+	if not RunService:IsClient() then
 		local CacheModule = Cache
 		function Cache(Object, Name)
 			if CacheModule(Object, Name) then
@@ -76,14 +78,14 @@ if RunService:IsServer() then
 		end
 	end
 else
-	function RetrieveObject(Table, Name, Folder) -- This is what allows the client / server to run the same code
-		local Object = WaitForChild(Folder, Name)
-		Table[Name] = Object
-		return Object
-	end
+	Retrieve = WaitForChild
 end
-self.Retrieve = RetrieveObject
-local function GetFolder() return RetrieveObject(self, "Resources", script, "Folder") end -- First time use only
+
+local function GetFolder() -- First time use only
+	local Resources = Retrieve(script, "Resources", "Folder")
+	self.Resources, self.Retrieve = Resources, Retrieve
+	return Resources
+end
 
 function self:__index(index) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
 	assert(type(index) == "string", "[Nevermore] Method must be a string")
@@ -110,7 +112,12 @@ function self:__index(index) -- Using several strings for the same method (e.g. 
 		local Folder = GetFolder(Class .. "s")
 		local function Function(...)
 			local Name, Parent = extract(...)
-			return Table[Name] or RetrieveObject(Table, Name, Parent or Folder, Class)
+			local Object = Table[Name]
+			if not Object then
+				Object = Retrieve(Parent or Folder, Name, Class)
+				Table[Name] = Object
+			end
+			return Object
 		end
 		self[originalIndex] = Function
 		return Function
@@ -120,7 +127,6 @@ GetFolder = self:__index("GetFolder")
 Repository = GetFolder("Modules") -- Generates Folder manager and grabs Module folder
 Appended = not CacheAssemble(ServerModules or Repository) -- Assembles table LibraryCache
 
-self.GetFolder = GetFolder
 function self.GetModule(...)
 	local Name = extract(...)
 	return type(Name) ~= "string" and error("[Nevermore] ModuleName must be a string") or require(LibraryCache[Name] or error("[Nevermore] Module \"" .. Name .. "\" is not installed."))
