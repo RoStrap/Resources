@@ -25,7 +25,7 @@ local ServerScriptService = GetService(game, "ServerScriptService")
 local self = {__metatable = "[Nevermore] Nevermore's metatable is locked"}
 local LibraryCache = {}
 local ServerModules = FindFirstChild(ServerScriptService, FolderName) or FindFirstChild(ServerScriptService, "Nevermore")
-local Appended, Retrieve, Repository = true
+local Retrieve, Repository
 
 local IsClient = RunService:IsClient()
 
