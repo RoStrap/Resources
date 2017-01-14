@@ -28,10 +28,12 @@ local IsClient = RunService:IsClient()
 local LibraryCache = {}
 local ServerModules = FindFirstChild(ServerScriptService, FolderName) or FindFirstChild(ServerScriptService, "Nevermore")
 
+-- Assertions
 assert(script.Name ~= "ModuleScript", "[Nevermore] Nevermore was never given a name")
 assert(script.ClassName == "ModuleScript", "[Nevermore] Nevermore must be a ModuleScript")
 assert(script.Parent == ReplicatedStorage, "[Nevermore] Nevermore must be parented to ReplicatedStorage")
 
+-- Helper functions
 local function Retrieve(Parent, Name, Class) -- This is what allows the client / server to run the same code
 	local Object = FindFirstChild(Parent, Name)
 	if not Object then
@@ -52,6 +54,7 @@ local function GetFolder() -- First time use only
 	return Resources
 end
 
+-- Generation function
 local function GetResourceManager(self, index) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
 	assert(type(index) == "string", "[Nevermore] Method must be a string")
 	local originalIndex = index
@@ -78,7 +81,8 @@ GetFolder = GetResourceManager(self, "GetFolder")
 local Repository = GetFolder("Modules") -- Generates Folder manager and grabs Module folder
 
 -- Assemble table LibraryCache
-local Descendants, Count, NumDescendants = {ServerModules or Repository}, 0, 1
+local Descendants = {ServerModules or Repository}
+local Count, NumDescendants = 0, 1
 repeat
 	Count = Count + 1
 	local GrandChildren = GetChildren(Descendants[Count])
@@ -99,6 +103,7 @@ repeat
 	NumDescendants = NumDescendants + NumGrandChildren
 until Count == NumDescendants
 
+-- Custom Require function
 function self.GetModule(Nevermore, Name)
 	Name = Nevermore ~= self and Nevermore or Name
 	return type(Name) ~= "string" and error("[Nevermore] ModuleName must be a string") or require(LibraryCache[Name] or error("[Nevermore] Module \"" .. Name .. "\" is not installed."))
