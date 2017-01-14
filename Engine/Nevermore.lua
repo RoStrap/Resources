@@ -1,20 +1,21 @@
--- @author Narrev
+-- @author Validark
 -- @original Quenty
 -- @readme https://github.com/NevermoreFramework/Nevermore
 
 -- Configuration
 local DEBUG_MODE = false -- Helps identify which modules fail to load
 local FolderName = "Modules" -- Module Folder in ServerScriptService
+local ResourcesLocation = script -- Where the "Resources" folder is, or will be created
 local Classes = { -- Allows for abbreviations
-	Event = "RemoteEvent";
+	Event = "RemoteEvent"; -- You can use Nevermore:GetEvent() instead of GetRemoteEvent()
 	Function = "RemoteFunction";
 }
 
 -- Optimizations
 local NewInstance = Instance.new
-local type, error, assert, select, require = type, error, assert, select, require
 local find, gsub, lower = string.find, string.gsub, string.lower
-local IsA, Destroy, GetService, GetChildren, WaitForChild, FindFirstChild = game.IsA, game.Destroy, game.GetService, game.GetChildren, game.WaitForChild, game.FindFirstChild
+local type, error, assert, select, require = type, error, assert, select, require
+local Destroy, FindFirstChild, GetService, GetChildren, WaitForChild = game.Destroy, game.FindFirstChild, game.GetService, game.GetChildren, game.WaitForChild
 
 -- Services
 local RunService = GetService(game, "RunService")
@@ -23,17 +24,15 @@ local ServerScriptService = GetService(game, "ServerScriptService")
 
 -- Module Data
 local self = {__metatable = "[Nevermore] Nevermore's metatable is locked"}
+local IsClient = RunService:IsClient()
 local LibraryCache = {}
 local ServerModules = FindFirstChild(ServerScriptService, FolderName) or FindFirstChild(ServerScriptService, "Nevermore")
-local Retrieve, Repository
 
-local IsClient = RunService:IsClient()
-
-assert(IsA(script, "ModuleScript"), "[Nevermore] Nevermore must be a ModuleScript")
 assert(script.Name ~= "ModuleScript", "[Nevermore] Nevermore was never given a name")
+assert(script.ClassName == "ModuleScript", "[Nevermore] Nevermore must be a ModuleScript")
 assert(script.Parent == ReplicatedStorage, "[Nevermore] Nevermore must be parented to ReplicatedStorage")
 
-function Retrieve(Parent, Name, Class) -- This is what allows the client / server to run the same code
+local function Retrieve(Parent, Name, Class) -- This is what allows the client / server to run the same code
 	local Object = FindFirstChild(Parent, Name)
 	if not Object then
 		Object = NewInstance(Class, Parent)
@@ -41,34 +40,29 @@ function Retrieve(Parent, Name, Class) -- This is what allows the client / serve
 	end
 	return Object
 end
-self.Retrieve = Retrieve
+self.Retrieve = Retrieve -- Give the retrieve function to clients
 
 if not RunService:IsServer() then
-	Retrieve = WaitForChild
+	Retrieve = WaitForChild -- Clients wait for assets to be created by the server
 end
 
 local function GetFolder() -- First time use only
-	local Resources = Retrieve(script, "Resources", "Folder")
+	local Resources = Retrieve(ResourcesLocation, "Resources", "Folder")
 	self.Resources = Resources
 	return Resources
 end
 
-function self:__index(index) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
+local function GetResourceManager(self, index) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
 	assert(type(index) == "string", "[Nevermore] Method must be a string")
 	local originalIndex = index
-	local index = gsub(index, "^Get", "")
+	index = gsub(index, "^Get", "")
 	local Class = Classes[index] or index
 	local Table = {}
 	local Folder = GetFolder(Class .. "s")
-	local function Function(...)
-		local Name, Parent
-
-		if ... == self then -- Enables functions to support calling by '.' or ':'
-			Name, Parent = select(2, ...)
-		else
-			Name, Parent = ...
+	local function Function(Nevermore, Name, Parent)
+		if Nevermore ~= self then -- Enables functions to support calling by '.' or ':'
+			Name, Parent = Nevermore, Name
 		end
-
 		local Object = Table[Name]
 		if not Object then
 			Object = Retrieve(Parent or Folder, Name, Class)
@@ -79,8 +73,9 @@ function self:__index(index) -- Using several strings for the same method (e.g. 
 	self[originalIndex] = Function
 	return Function
 end
-GetFolder = self:__index("GetFolder")
-Repository = GetFolder("Modules") -- Generates Folder manager and grabs Module folder
+self.__index = GetResourceManager
+GetFolder = GetResourceManager(self, "GetFolder")
+local Repository = GetFolder("Modules") -- Generates Folder manager and grabs Module folder
 
 -- Assemble table LibraryCache
 local Descendants, Count, NumDescendants = {ServerModules or Repository}, 0, 1
@@ -104,8 +99,8 @@ repeat
 	NumDescendants = NumDescendants + NumGrandChildren
 until Count == NumDescendants
 
-function self.GetModule(...)
-	local Name = ... == self and select(2, ...) or ...
+function self.GetModule(Nevermore, Name)
+	Name = Nevermore ~= self and Nevermore or Name
 	return type(Name) ~= "string" and error("[Nevermore] ModuleName must be a string") or require(LibraryCache[Name] or error("[Nevermore] Module \"" .. Name .. "\" is not installed."))
 end
 
@@ -113,8 +108,8 @@ if DEBUG_MODE then
 	local GetModule = self.GetModule
 	local DebugID, RequestDepth = 0, 0
 
-	function self.GetModule(...)
-		local Name = ... == self and select(2, ...) or ...
+	function self.GetModule(Nevermore, Name)
+		Name = Nevermore ~= self and Nevermore or Name
 		DebugID = DebugID + 1
 		local LocalDebugID = DebugID
 		print(string.rep("\t", RequestDepth), LocalDebugID, "Loading:", Name)
