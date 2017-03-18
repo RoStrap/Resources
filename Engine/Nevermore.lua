@@ -4,8 +4,8 @@
 
 -- Configuration
 local DEBUG_MODE = false -- Helps identify which modules fail to load
-local FolderName = "Modules" -- Module Folder in ServerScriptService
-local ResourcesLocation = script -- Where the "Resources" folder is, or will be created
+local FolderName = "Modules" -- Name of Module Folder in ServerScriptService
+local ResourcesLocation -- Where the "Resources" folder is, it will be generated if needed
 local Classes = { -- Allows for abbreviations
 	Event = "RemoteEvent"; -- You can use Nevermore:GetEvent() instead of GetRemoteEvent()
 	Function = "RemoteFunction";
@@ -13,20 +13,15 @@ local Classes = { -- Allows for abbreviations
 
 -- Optimizations
 local NewInstance = Instance.new
-local find, gsub, lower = string.find, string.gsub, string.lower
-local type, error, assert, select, require = type, error, assert, select, require
+local gsub = string.gsub
+local type, assert, require = type, assert, require
 local Destroy, FindFirstChild, GetService, GetChildren, WaitForChild = game.Destroy, game.FindFirstChild, game.GetService, game.GetChildren, game.WaitForChild
 
 -- Services
 local RunService = GetService(game, "RunService")
+local ServerStorage = GetService(game, "ServerStorage")
 local ReplicatedStorage = GetService(game, "ReplicatedStorage")
 local ServerScriptService = GetService(game, "ServerScriptService")
-
--- Module Data
-local self = {__metatable = "[Nevermore] Nevermore's metatable is locked"}
-local IsClient = RunService:IsClient()
-local LibraryCache = {}
-local ServerModules = FindFirstChild(ServerScriptService, FolderName) or FindFirstChild(ServerScriptService, "Nevermore")
 
 -- Assertions
 assert(script.Name ~= "ModuleScript", "[Nevermore] Nevermore was never given a name")
@@ -35,73 +30,107 @@ assert(script.Parent == ReplicatedStorage, "[Nevermore] Nevermore must be parent
 
 -- Helper functions
 local function Retrieve(Parent, Name, Class) -- This is what allows the client / server to run the same code
-	local Object = FindFirstChild(Parent, Name)
+	local Object, Bool = FindFirstChild(Parent, Name)
+
 	if not Object then
 		Object = NewInstance(Class, Parent)
-		Object.Name, Object.Archivable = Name
+		Object.Name = Name
+		Bool = true
 	end
-	return Object
-end
-self.Retrieve = Retrieve -- Give the retrieve function to clients
 
+	return Object, Bool
+end
+local GetFirstChild = Retrieve
+
+-- Module Data
+local self = {
+	__metatable = "[Nevermore] Nevermore's metatable is locked";
+	Retrieve = Retrieve;
+	GetFirstChild = Retrieve;
+}
+
+local LocalResourcesLocation
 if not RunService:IsServer() then
+	LocalResourcesLocation = GetService(game, "Players").LocalPlayer
 	Retrieve = WaitForChild -- Clients wait for assets to be created by the server
+else
+	LocalResourcesLocation = ServerStorage
 end
 
-local function GetFolder() -- First time use only
-	local Resources = Retrieve(ResourcesLocation, "Resources", "Folder")
-	self.Resources = Resources
-	return Resources
-end
+-- First-time use only
+local function GetFolder() return  Retrieve(ResourcesLocation or ReplicatedStorage, "Resources", "Folder") end
+local function GetLocalFolder() return GetFirstChild(LocalResourcesLocation, "Resources", "Folder") end
 
 -- Generation function
-local function GetResourceManager(self, index) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
-	assert(type(index) == "string", "[Nevermore] Method must be a string")
-	local originalIndex = index
-	index = gsub(index, "^Get", "")
-	local Class = Classes[index] or index
+local function CreateResourceManager(self, Name) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
+	assert(type(Name) == "string", "[Nevermore] Method must be a string")
+	local FullName = Name
+	Name, Local = gsub(gsub(Name, "^Get", ""), "^Local", "")
+	local Retrieve = Retrieve
+	local GetFolder = GetFolder
+
+	if Local > 0 then
+		Retrieve = GetFirstChild
+		GetFolder = GetLocalFolder
+	end
+
+	local Class = Classes[Name] or Name
 	local Table = {}
-	local Folder = GetFolder(Class .. "s")
+	local Folder = GetFolder(Name == "Accessory" and "Accessories" or Class .. "s")
 	local function Function(Nevermore, Name, Parent)
 		if Nevermore ~= self then -- Enables functions to support calling by '.' or ':'
 			Name, Parent = Nevermore, Name
 		end
-		local Object = Table[Name]
+		local Object, Bool = Table[Name]
 		if not Object then
-			Object = Retrieve(Parent or Folder, Name, Class)
-			Table[Name] = Object
+			Object, Bool = Retrieve(Parent or Folder, Name, Class)
+			if not Parent then
+				Table[Name] = Object
+			end
 		end
-		return Object
+		return Object, Bool
 	end
-	self[originalIndex] = Function
+	self[FullName] = Function
 	return Function
 end
-self.__index = GetResourceManager
-GetFolder = GetResourceManager(self, "GetFolder")
-local Repository = GetFolder("Modules") -- Generates Folder manager and grabs Module folder
+self.__index = CreateResourceManager
+GetFolder = CreateResourceManager(self, "GetFolder")
+GetLocalFolder = CreateResourceManager(self, "GetLocalFolder") -- Generates Local Folder manager
 
 -- Assemble table LibraryCache
-local Descendants = {ServerModules or Repository}
-local Count, NumDescendants = 0, 1
-repeat
-	Count = Count + 1
-	local GrandChildren = GetChildren(Descendants[Count])
-	local NumGrandChildren = #GrandChildren
-	for a = 1, NumGrandChildren do
-		local Descendant = GrandChildren[a]
-		local Name = Descendant.Name
-		Descendants[NumDescendants + a] = Descendant
+local LibraryCache = {} do
+	local IsClient = RunService:IsClient()
+	local Repository = GetFolder("Modules") -- Grabs Module folder
+	local ServerModules = FindFirstChild(ServerScriptService, FolderName or "Nevermore")
+	local Descendants = {ServerModules or Repository}
+	local Count, NumDescendants, ServerRepository = 0, 1
 
-		if Descendant.ClassName == "ModuleScript" then
-			assert(not LibraryCache[Name], "[Nevermore] Duplicate Module with name \"" .. Name .. "\"")
-			LibraryCache[Name] = Descendant
-			if not IsClient then
-				Descendant.Parent = find(lower(Name), "server") and ServerModules or Repository
-			end-- TODO: Destroy non-scripts on server, but the loop needs to be adjusted to iterate over the furthest descendants first
-		end
+	if not IsClient then
+		ServerRepository = GetLocalFolder("Modules")
 	end
-	NumDescendants = NumDescendants + NumGrandChildren
-until Count == NumDescendants
+
+	repeat
+		Count = Count + 1
+		local GrandChildren = GetChildren(Descendants[Count])
+		local NumGrandChildren = #GrandChildren
+		for a = 1, NumGrandChildren do
+			local Descendant = GrandChildren[a]
+--			GrandChildren[a] = nil
+			local Name = Descendant.Name
+			Descendants[NumDescendants + a] = Descendant
+			if Descendant.ClassName == "ModuleScript" then
+				assert(not LibraryCache[Name], "[Nevermore] Duplicate Module with name \"" .. Name .. "\"")
+				LibraryCache[Name] = Descendant
+				Descendant.Parent = Name:lower():find("server") and ServerRepository or Repository
+			end
+		end
+		NumDescendants = NumDescendants + NumGrandChildren
+	until Count == NumDescendants
+
+	if not IsClient then
+		Destroy(ServerModules)
+	end
+end
 
 -- Custom Require function
 function self.GetModule(Nevermore, Name)
