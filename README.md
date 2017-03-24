@@ -42,9 +42,21 @@ Upon being required for the first time on the Server, Nevermore indexes all of t
 The first parameter of all of Nevermore's `Get` functions is `Name`. Calling `Nevermore:GetObjectType(Name)` will ask Nevermore to find an Object in "Resources" in a Folder called ("ObjectType" .. "s"). With the exception of `GetModule`, if a desired object does not exist, it will be procedurally generated. For example:
 
 ```lua
-	local Nevermore = require(ReplicatedStorage.Nevermore)
-	local CustomChatEvent = Nevermore:GetRemoteEvent("Chatted")
+local Nevermore = require(ReplicatedStorage.Nevermore)
+local CustomChatEvent = Nevermore:GetRemoteEvent("Chatted")
 ```
+
+If you want to access local storage (not replicated across the client-server model), you can add `Local` after `Get` to access it. On the server, local storage is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, local storage is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Nevermore stores goes under folders named `Resources`.
+
+```lua
+local GunThePlayerJustBought = Nevermore:GetLocalGun("Ak-47")
+-- Make sure this exists if you want to use it
+-- Otherwise, Nevermore will error trying to do Instance.new("Gun")
+
+GunThePlayerJustBought:Clone().Parent = PlayerBackpackThatBoughtIt
+```
+
+Note: This local feature doesn't yet apply to modules. The only things currently excluded from replication are modules with "Server" in their name, which are moved to `ServerStorage` and thus only accessible from the Server.
 
 #### Example
 
@@ -85,7 +97,7 @@ Try using Nevermore to manage other things like Maps for a game! Make a Folder n
 ```lua
 local Nevermore = require(ReplicatedStorage.Nevermore)
 local Hometown = Nevermore:GetMap("Hometown v2")
-Hometown:Clone().Parent = workspace
+Hometown.Parent = workspace
 ```
 
 ## Attributions
