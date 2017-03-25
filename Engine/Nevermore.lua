@@ -7,8 +7,13 @@ local DEBUG_MODE = false -- Helps identify which modules fail to load
 local FolderName = "Modules" -- Name of Module Folder in ServerScriptService
 local ResourcesLocation -- Where the "Resources" folder is, it will be generated if needed
 local Classes = { -- Allows for abbreviations
+--	[Abbrv] = [ClassName]
 	Event = "RemoteEvent"; -- You can use Nevermore:GetEvent() instead of GetRemoteEvent()
 	Function = "RemoteFunction";
+}
+local Plurals = { -- If you want to name the folder something besides Name .. "s"
+--	[ClassName] = [FolderName]
+	Accessory = "Accessories";
 }
 
 -- Optimizations
@@ -58,13 +63,13 @@ else
 end
 
 -- First-time use only
-local function GetFolder() return  Retrieve(ResourcesLocation or ReplicatedStorage, "Resources", "Folder") end
+local function GetFolder() return Retrieve(ResourcesLocation or ReplicatedStorage, "Resources", "Folder") end
 local function GetLocalFolder() return GetFirstChild(LocalResourcesLocation, "Resources", "Folder") end
 
 -- Generation function
 local function CreateResourceManager(self, Name) -- Using several strings for the same method (e.g. Event and GetRemoteEvent) is slightly less efficient
 	assert(type(Name) == "string", "[Nevermore] Method must be a string")
-	local FullName = Name
+	local FullName, Local = Name
 	Name, Local = gsub(gsub(Name, "^Get", ""), "^Local", "")
 	local Retrieve = Retrieve
 	local GetFolder = GetFolder
@@ -76,7 +81,7 @@ local function CreateResourceManager(self, Name) -- Using several strings for th
 
 	local Class = Classes[Name] or Name
 	local Table = {}
-	local Folder = GetFolder(Name == "Accessory" and "Accessories" or Class .. "s")
+	local Folder = GetFolder(Plurals[Class] or Class .. "s")
 	local function Function(Nevermore, Name, Parent)
 		if Nevermore ~= self then -- Enables functions to support calling by '.' or ':'
 			Name, Parent = Nevermore, Name
@@ -127,7 +132,7 @@ local LibraryCache = {} do
 		NumDescendants = NumDescendants + NumGrandChildren
 	until Count == NumDescendants
 
-	if not IsClient then
+	if not IsClient and ServerModules then
 		Destroy(ServerModules)
 	end
 end
