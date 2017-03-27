@@ -3,10 +3,11 @@
 -- @readme https://github.com/NevermoreFramework/Nevermore
 
 local Resources = {}
-
+local ModuleName = script.Name
 local Classes = { -- ContainerName -> ClassName (default: ClassName = ContainerName .. "s")
-	Accessories = "Accessory";
 	Resources = "Folder";
+	Accessories = "Accessory";
+	[ModuleName] = "Folder";
 }
 
 local sub = string.sub
@@ -53,7 +54,7 @@ if game:GetService("RunService"):IsServer() then
 	end
 
 	local ServerModules = LocalFolders.Modules
-	Folders, LocalFolders = __index(Resources, "Resources"), __index(Resources, "LocalResources")
+	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
 	local Repository = Folders.Modules
 	local find, lower = string.find, string.lower
 	local Count, NumDescendants = 0, 1
@@ -100,7 +101,7 @@ else
 			return Table
 		end
 	end
-	Folders, LocalFolders = __index(Resources, "Resources"), __index(Resources, "LocalResources")
+	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
 	Modules = __index(Resources, "Modules")
 end
 Resources.Resources, Resources.LocalResources = nil -- This cleans up the by-product of procedurally generating the Folders tables

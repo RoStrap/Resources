@@ -3,10 +3,11 @@
 -- @readme https://github.com/NevermoreFramework/Nevermore
 
 local Resources = {}
-
+local ModuleName = script.Name
 local Classes = { -- ContainerName -> ClassName (default: ClassName = ContainerName .. "s")
-	Accessories = "Accessory";
 	Resources = "Folder";
+	Accessories = "Accessory";
+	[ModuleName] = "Folder";
 }
 
 local sub = string.sub
@@ -17,7 +18,7 @@ local FindFirstChild = game.FindFirstChild
 
 local Folders, LocalFolders = game.ReplicatedStorage
 
-if script.Name ~= "Resources" then error("[Nevermore] Nevermore should be named \"Resources\"") end
+if script.Name == "ModuleScript" then error("[Nevermore] Nevermore should be given a proper name!") end
 if script.ClassName ~= "ModuleScript" then error("[Nevermore] Nevermore must be a ModuleScript") end
 if script.Parent ~= game.ReplicatedStorage then error("[Nevermore] Nevermore must be parented to ReplicatedStorage") end
 
@@ -61,7 +62,7 @@ if game:GetService("RunService"):IsServer() then
 	end
 
 	local ServerModules = LocalFolders.Modules
-	Folders, LocalFolders = __index(Resources, "Resources"), __index(Resources, "LocalResources")
+	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
 	local Repository = Folders.Modules
 	local find, lower = string.find, string.lower
 	local Count, NumDescendants = 0, 1
@@ -116,7 +117,7 @@ else
 			return Table
 		end
 	end
-	Folders, LocalFolders = __index(Resources, "Resources"), __index(Resources, "LocalResources")
+	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
 	Modules = __index(Resources, "Modules")
 end
 Resources.Resources, Resources.LocalResources = nil -- This cleans up the by-product of procedurally generating the Folders tables
