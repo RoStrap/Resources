@@ -102,49 +102,55 @@ end
 self.__index = CreateResourceManager
 GetFolder = CreateResourceManager(self, "GetFolder") -- Generates Folder manager
 
-local LibraryCache do -- Assembles table LibraryCache
+local Modules do -- Assembles table Modules
 	local Repository = GetFolder("Modules") -- Grabs Module folder
 
-	if not RunService:IsClient() then
+	if RunService:IsServer() then
 		local ServerModules = FindFirstChild(ServerScriptService, FolderName or "Nevermore")
-		local Count, NumDescendants = 0, 1
+		local Count, NumDescendants, Undeletable = 0, 1
 		local ServerRepository = GetLocalFolder("Modules")
-		LibraryCache = {ServerModules}
+		Modules = {ServerModules}
 		repeat
 			Count = Count + 1
-			local GrandChildren = GetChildren(LibraryCache[Count])
-			LibraryCache[Count] = nil
+			local GrandChildren = GetChildren(Modules[Count])
+			Modules[Count] = nil
 			local NumGrandChildren = #GrandChildren
 			for a = 1, NumGrandChildren do
 				local Descendant = GrandChildren[a]
 				local Name = Descendant.Name
-				LibraryCache[NumDescendants + a], GrandChildren[a] = Descendant
+				Modules[NumDescendants + a], GrandChildren[a] = Descendant
 				if Descendant.ClassName == "ModuleScript" then
-					if LibraryCache[Name] then
+					if Modules[Name] then
 						error("[Nevermore] Duplicate Module with name \"" .. Name .. "\"")
 					end
-					LibraryCache[Name] = Descendant
+					Modules[Name] = Descendant
 					Descendant.Parent = Name:lower():find("server") and ServerRepository or Repository
+				elseif Descendant.ClassName ~= "Folder" then
+					--Undeletable = true
+					Descendant.Parent = Retrieve(ServerScriptService, "Server", "Folder")
 				end
 			end
 			NumDescendants = NumDescendants + NumGrandChildren
 		until Count == NumDescendants
 
-		Destroy(ServerModules)
+		if not Undeletable then
+			Destroy(ServerModules)
+		end
 	else
-		LibraryCache = Repository:GetChildren()
-		for a = 1, #LibraryCache do
-			local Module = LibraryCache[a]
-			LibraryCache[a] = nil
-			LibraryCache[Module.Name] = Module
+		Modules = Repository:GetChildren()
+		for a = 1, #Modules do
+			local Module = Modules[a]
+			Modules[a] = nil
+			Modules[Module.Name] = Module
 		end
 	end
 end
 
 function self.GetModule(Nevermore, Name) -- Custom Require function
 	Name = Nevermore ~= self and Nevermore or Name
-	return type(Name) ~= "string" and error("[Nevermore] ModuleName must be a string") or require(LibraryCache[Name] or error("[Nevermore] Module \"" .. Name .. "\" is not installed."))
+	return type(Name) ~= "string" and error("[Nevermore] ModuleName must be a string") or require(Modules[Name] or error("[Nevermore] Module \"" .. Name .. "\" is not installed."))
 end
 
 self.__call = self.GetModule
+self.LoadLibrary = self.GetModule
 return setmetatable(self, self)
