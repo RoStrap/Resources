@@ -1,4 +1,4 @@
--- Resources Revamp
+-- Debug version
 -- @author Validark
 -- @readme https://github.com/NevermoreFramework/Nevermore
 
@@ -34,8 +34,13 @@ local function __index(self, Index) -- Create methods called to Resources
 	end
 
 	Class = Classes[Name] or sub(Name, 1, -2)
-	local Table = {}
 	local Folder = Folders[Name]
+	local Table = GetChildren(Folder)
+
+	for a = 1, #Table do -- Convert Array to hash table
+		local Object = Table[a]
+		Table[Object.Name], Table[a] = Object
+	end
 	self[Index] = Table
 
 	return setmetatable(Table, {
@@ -120,7 +125,7 @@ else
 	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
 	Modules = __index(Resources, "Modules")
 end
-Resources.Resources, Resources.LocalResources = nil -- This cleans up the by-product of procedurally generating the Folders tables
+Resources[ModuleName], Resources.LocalResources = nil -- This cleans up the by-product of procedurally generating the Folders tables
 local DebugID, RequestDepth = 0, 0
 
 function Resources.LoadLibrary(Name)
