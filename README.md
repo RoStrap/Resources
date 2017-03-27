@@ -13,6 +13,8 @@ Nevermore has a long list features, some are in development, and others are full
 - [x] **Tested** - Nevermore is thoroughly tested before each release. It won't break your code.
 - [ ] **Easy Setup** - Nevermore's [installer plugin](https://github.com/NevermoreEngine/Installation-Plugin) will get Nevermore and the modules you want set up for you.
 - [x] **Plays well with others** - Nevermore won't interfere with other frameworks or your existing code.
+- [x] **Fast** - The majority of Nevermore's use is just indexing tables (something just-in-time Lua is one of the fastest languages at)
+- [x] **Light-weight** - With under 100 source lines of code, Nevermore is just a simple "Smart Folder"
 
 ## Getting Started
 

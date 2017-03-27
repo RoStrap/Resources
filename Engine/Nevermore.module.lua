@@ -1,8 +1,8 @@
--- Resources Revamp
 -- @author Validark
 -- @readme https://github.com/NevermoreFramework/Nevermore
 
 local Resources = {}
+
 local ModuleName = script.Name
 local Classes = { -- ContainerName -> ClassName (default: ClassName = ContainerName .. "s")
 	Resources = "Folder";
@@ -47,8 +47,10 @@ local function __index(self, Index) -- Create methods called to Resources
 end
 
 local Modules
+
 if game:GetService("RunService"):IsServer() then
 	LocalFolders = game.ServerStorage
+
 	if not FindFirstChild(LocalFolders, "Resources") then
 		new("Folder", LocalFolders).Name = "Resources"
 	end
@@ -64,10 +66,12 @@ if game:GetService("RunService"):IsServer() then
 		Count = Count + 1
 		local GrandChildren = GetChildren(Modules[Count])
 		local NumGrandChildren = #GrandChildren
+
 		for a = 1, NumGrandChildren do
 			local Descendant = GrandChildren[a]
 			local Name = Descendant.Name
 			Modules[NumDescendants + a], GrandChildren[a] = Descendant
+
 			if Descendant.ClassName == "ModuleScript" then
 				Modules[Name] = Descendant
 				Descendant.Parent = find(lower(Name), "server") and LocalFolders.Modules or Repository
@@ -80,9 +84,11 @@ if game:GetService("RunService"):IsServer() then
 	Resources.Modules = Modules
 else
 	LocalFolders = game.Players.LocalPlayer
+
 	if not FindFirstChild(LocalFolders, "Resources") then
 		new("Folder", LocalFolders).Name = "Resources"
 	end
+
 	local find = string.find
 	local GetLocal = __index
 
@@ -101,10 +107,12 @@ else
 			return Table
 		end
 	end
+
 	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
 	Modules = __index(Resources, "Modules")
 end
 Resources.Resources, Resources.LocalResources = nil -- This cleans up the by-product of procedurally generating the Folders tables
+
 function Resources.LoadLibrary(Name)
 	return require(Modules[Name])
 end
