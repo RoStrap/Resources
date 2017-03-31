@@ -15,19 +15,11 @@ local gsub = string.gsub
 local new = Instance.new
 local GetChildren = game.GetChildren
 local FindFirstChild = game.FindFirstChild
-
 local Folders, LocalFolders = game.ReplicatedStorage
 
-local function __index(self, Index) -- Create methods called to Resources
-	local Folders = Folders
-	local Name, Class = gsub(Index, "^Local", "")
-
-	if Class == 1 then
-		Folders = LocalFolders
-	end
-
-	Class = Classes[Name] or sub(Name, 1, -2)
-	local Folder = Folders[Name]
+local function __index(self, Class) -- Create methods called to Resources
+	local Name, Folder = gsub(Class, "^Local", "")
+	Folder = (Folder == 0 and Folders or LocalFolders)[Name]
 	local Table = GetChildren(Folder)
 
 	for a = 1, #Table do -- Convert Array to hash table
@@ -35,7 +27,8 @@ local function __index(self, Index) -- Create methods called to Resources
 		Table[Object.Name], Table[a] = Object
 	end
 
-	self[Index] = Table
+	self[Class] = Table
+	Class = Classes[Name] or sub(Name, 1, -2)
 
 	return setmetatable(Table, {
 		__index = function(self, Name)
@@ -46,13 +39,13 @@ local function __index(self, Index) -- Create methods called to Resources
 				Object.Name = Name
 			end
 
-			Table[Name] = Object
+			self[Name] = Object
 			return Object
 		end
 	})
 end
 
-local Modules
+local Modules = {}
 
 if game:GetService("RunService"):IsServer() then
 	LocalFolders = game.ServerStorage
@@ -62,7 +55,7 @@ if game:GetService("RunService"):IsServer() then
 	end
 
 	local ServerModules = LocalFolders.Modules
-	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
+	Folders, LocalFolders = __index(Modules, ModuleName), __index(Modules, "LocalResources")
 	local Repository = Folders.Modules
 	local find, lower = string.find, string.lower
 	local Count, NumDescendants = 0, 1
@@ -114,13 +107,17 @@ else
 		end
 	end
 
-	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
+	Folders, LocalFolders = __index(Modules, ModuleName), __index(Modules, "LocalResources")
 	Modules = __index(Resources, "Modules")
 end
-Resources[ModuleName], Resources.LocalResources = nil -- This cleans up the by-product of procedurally generating the Folders tables
 
-function Resources.LoadLibrary(Name)
-	return require(Modules[Name])
-end
+local require = require
+Resources.LoadLibrary = setmetatable({}, {
+	__index = function(self, Name)
+		local Library = require(Modules[Name])
+		self[Name] = Library
+		return Library
+	end
+})
 
 return setmetatable(Resources, {__index = __index})

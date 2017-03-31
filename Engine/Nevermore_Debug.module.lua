@@ -3,6 +3,7 @@
 -- @readme https://github.com/NevermoreFramework/Nevermore
 
 local Resources = {}
+
 local ModuleName = script.Name
 local Classes = { -- ContainerName -> ClassName (default: ClassName = ContainerName .. "s")
 	Resources = "Folder";
@@ -15,33 +16,27 @@ local gsub = string.gsub
 local new = Instance.new
 local GetChildren = game.GetChildren
 local FindFirstChild = game.FindFirstChild
-
 local Folders, LocalFolders = game.ReplicatedStorage
 
 if script.Name == "ModuleScript" then error("[Nevermore] Nevermore should be given a proper name!") end
 if script.ClassName ~= "ModuleScript" then error("[Nevermore] Nevermore must be a ModuleScript") end
 if script.Parent ~= game.ReplicatedStorage then error("[Nevermore] Nevermore must be parented to ReplicatedStorage") end
 
-local function __index(self, Index) -- Create methods called to Resources
-	if type(Index) ~= "string" then
+local function __index(self, Class) -- Create methods called to Resources
+	if type(Class) ~= "string" then
 		error("[Nevermore] You can only index strings inside Resources")
 	end
-	local Folders = Folders
-	local Name, Class = gsub(Index, "^Local", "")
-
-	if Class == 1 then
-		Folders = LocalFolders
-	end
-
-	Class = Classes[Name] or sub(Name, 1, -2)
-	local Folder = Folders[Name]
+	local Name, Folder = gsub(Class, "^Local", "")
+	Folder = (Folder == 0 and Folders or LocalFolders)[Name]
 	local Table = GetChildren(Folder)
 
 	for a = 1, #Table do -- Convert Array to hash table
 		local Object = Table[a]
 		Table[Object.Name], Table[a] = Object
 	end
-	self[Index] = Table
+
+	self[Class] = Table
+	Class = Classes[Name] or sub(Name, 1, -2)
 
 	return setmetatable(Table, {
 		__index = function(self, Name)
@@ -52,13 +47,14 @@ local function __index(self, Index) -- Create methods called to Resources
 				Object.Name = Name
 			end
 
-			Table[Name] = Object
+			self[Name] = Object
 			return Object
 		end
 	})
 end
 
-local Modules
+local Modules = {}
+
 if game:GetService("RunService"):IsServer() then
 	LocalFolders = game.ServerStorage
 	if not LocalFolders:FindFirstChild("Modules") then error("[Nevermore] Your modules Repository should be in ServerStorage and be named \"Modules\"") end
@@ -67,7 +63,7 @@ if game:GetService("RunService"):IsServer() then
 	end
 
 	local ServerModules = LocalFolders.Modules
-	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
+	Folders, LocalFolders = __index(Modules, ModuleName), __index(Modules, "LocalResources")
 	local Repository = Folders.Modules
 	local find, lower = string.find, string.lower
 	local Count, NumDescendants = 0, 1
@@ -77,10 +73,12 @@ if game:GetService("RunService"):IsServer() then
 		Count = Count + 1
 		local GrandChildren = GetChildren(Modules[Count])
 		local NumGrandChildren = #GrandChildren
+
 		for a = 1, NumGrandChildren do
 			local Descendant = GrandChildren[a]
 			local Name = Descendant.Name
 			Modules[NumDescendants + a], GrandChildren[a] = Descendant
+
 			if Descendant.ClassName == "ModuleScript" then
 				if Modules[Name] then
 					error("[Nevermore] Duplicate Module with name \"" .. Name .. "\"")
@@ -98,9 +96,11 @@ if game:GetService("RunService"):IsServer() then
 	Resources.Modules = Modules
 else
 	LocalFolders = game.Players.LocalPlayer
+
 	if not FindFirstChild(LocalFolders, "Resources") then
 		new("Folder", LocalFolders).Name = "Resources"
 	end
+
 	local find = string.find
 	local GetLocal = __index
 
@@ -122,24 +122,29 @@ else
 			return Table
 		end
 	end
-	Folders, LocalFolders = __index(Resources, ModuleName), __index(Resources, "LocalResources")
+
+	Folders, LocalFolders = __index(Modules, ModuleName), __index(Modules, "LocalResources")
 	Modules = __index(Resources, "Modules")
 end
-Resources[ModuleName], Resources.LocalResources = nil -- This cleans up the by-product of procedurally generating the Folders tables
+
+local require = require
 local DebugID, RequestDepth = 0, 0
 
-function Resources.LoadLibrary(Name)
-	if type(Name) ~= "string" then
-		error("[Nevermore] LoadLibrary requires a string parameter")
+Resources.LoadLibrary = setmetatable({}, {
+	__index = function(self, Name)
+		if type(Name) ~= "string" then
+			error("[Nevermore] LoadLibrary requires a string parameter")
+		end
+		DebugID = DebugID + 1
+		local LocalDebugID = DebugID
+		print(string.rep("\t", RequestDepth), LocalDebugID, "Loading:", Name)
+		RequestDepth = RequestDepth + 1
+		local Library = type(Name) ~= "string" and error("[Nevermore] ModuleName must be a string") or require(Modules[Name] or error("[Nevermore] Module \"" .. Name .. "\" is not installed."))
+		self[Name] = Library
+		RequestDepth = RequestDepth - 1
+		print(string.rep("\t", RequestDepth), LocalDebugID, "Done loading:", Name)
+		return Library
 	end
-	DebugID = DebugID + 1
-	local LocalDebugID = DebugID
-	print(string.rep("\t", RequestDepth), LocalDebugID, "Loading:", Name)
-	RequestDepth = RequestDepth + 1
-	local Library = type(Name) ~= "string" and error("[Nevermore] ModuleName must be a string") or require(Modules[Name] or error("[Nevermore] Module \"" .. Name .. "\" is not installed."))
-	RequestDepth = RequestDepth - 1
-	print(string.rep("\t", RequestDepth), LocalDebugID, "Done loading:", Name)
-	return Library
-end
+})
 
-return setmetatable(Resources, {__index = __index; __metatable = "[Resources] Resources's metatable is locked"})
+return setmetatable(Resources, {__index = __index; __metatable = "[Nevermore] metatable is locked"})
