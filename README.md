@@ -58,21 +58,15 @@ local Nevermore = require(game.ReplicatedStorage.Nevermore)
 local CustomChatEvent = Nevermore.RemoteEvents["Chatted"]
 ```
 
-Nevermore also comes with a `LoadLibrary` function, which is literally just a convenient wrapper to make a custom require-by-string function. It looks like this:
-```lua
-function Nevermore.LoadLibrary(Name)
-	return require(Nevermore.Modules[Name])
-end
-```
-To use it, do like so:
+Nevermore also comes with a `LoadLibrary` table, which is literally just a convenient wrapper to make a custom require-by-string function. It caches modules that have already ran and returned, making it more efficent than the built-in require upon subsequent calls. To use it, do like so:
 ```lua
 local LoadLibrary = Nevermore.LoadLibrary
-local TweenModule = LoadLibrary("Tween")
+local TweenModule = LoadLibrary["Tween"]
 ```
 I like to overwrite the default require function with it, because you don't need both:
 ```lua
 local require = Nevermore.LoadLibrary
-local TweenModule = require("Tween")
+local TweenModule = require["Tween"]
 ```
 
 If you want to access local storage (not replicated across the client-server model), you can add `Local` before the singular of the `FolderName` to access it. On the server, "local storage" is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, "local storage" is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Nevermore stores goes into folders named `Resources`.
@@ -101,7 +95,7 @@ local TweenModule = require(Nevermore.Modules["Tween"])
 
 -- Using the wrapper require function
 local require = Nevermore.LoadLibrary
-local TweenModule = require("Tween")
+local TweenModule = require["Tween"]
 ```
 
 #### Manage other things
