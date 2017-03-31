@@ -69,6 +69,11 @@ local require = Nevermore.LoadLibrary
 local TweenModule = require["Tween"]
 ```
 
+Otherwise, you can use the built-in global `require`:
+```lua
+local TweenModule = require(Nevermore.Modules.Tween)
+```
+
 If you want to access local storage (not replicated across the client-server model), you can add `Local` before the singular of the `FolderName` to access it. On the server, "local storage" is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, "local storage" is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Nevermore stores goes into folders named `Resources`.
 
 ```lua
