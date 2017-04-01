@@ -82,14 +82,13 @@ if game:GetService("RunService"):IsServer() then
 	ServerModules:Destroy()
 	Resources.Modules = Modules
 else
+	local find = string.find
+	local GetLocal = __index
 	LocalFolders = game.Players.LocalPlayer
-
 	if not FindFirstChild(LocalFolders, "Resources") then
 		new("Folder", LocalFolders).Name = "Resources"
 	end
-
-	local find = string.find
-	local GetLocal = __index
+	LocalFolders = __index(Modules, "LocalResources")
 
 	function __index(self, Name) -- Client just gets a copy, no object creation
 		if find(Name, "^Local") then
@@ -107,14 +106,18 @@ else
 		end
 	end
 
-	Folders, LocalFolders = __index(Modules, ModuleName), __index(Modules, "LocalResources")
+	Folders = __index(Modules, ModuleName)
 	Modules = __index(Resources, "Modules")
 end
+Classes.Resources, Classes[ModuleName] = nil
 
 local require = require
 Resources.LoadLibrary = setmetatable({}, {
 	__index = function(self, Name)
 		local Library = require(Modules[Name])
+		if Library == nil then
+			Library = false
+		end
 		self[Name] = Library
 		return Library
 	end
