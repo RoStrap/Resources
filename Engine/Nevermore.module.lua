@@ -4,6 +4,7 @@
 local Resources = {}
 
 local ModuleName = script.Name
+
 local Classes = { -- ContainerName -> ClassName (default: ClassName = ContainerName .. "s")
 	Resources = "Folder";
 	Accessories = "Accessory";
@@ -45,7 +46,7 @@ local function __index(self, Class) -- Create methods called to Resources
 	})
 end
 
-local Modules = {}
+local Modules
 
 if game:GetService("RunService"):IsServer() then
 	LocalFolders = game.ServerStorage
@@ -54,27 +55,63 @@ if game:GetService("RunService"):IsServer() then
 		new("Folder", LocalFolders).Name = "Resources"
 	end
 
-	local ServerModules = LocalFolders.Modules
-	Folders, LocalFolders = __index(Modules, ModuleName), __index(Modules, "LocalResources")
+	local Boundaries = {}
+	local ServerModules = FindFirstChild(LocalFolders, "Modules") or LocalFolders.Resources.Modules
+	ServerModules.Name = ""
+	Folders = __index(Boundaries, ModuleName)
+	LocalFolders = __index(Boundaries, "LocalResources")
 	local Repository = Folders.Modules
-	local find, lower = string.find, string.lower
-	local Count, NumDescendants = 0, 1
+	local find = string.find
+	local lower = string.lower
+	local Count, BoundaryCount = 0, 0
+	local NumDescendants, CurrentBoundary = 1, 1
+	local LowerBoundary, SetsEnabled, UpperBoundary, LowerBoundary
+
 	Modules = {ServerModules}
 
 	repeat
 		Count = Count + 1
-		local GrandChildren = GetChildren(Modules[Count])
+		local Child = Modules[Count]
+		local Name = Child.Name
+		local GrandChildren = GetChildren(Child)
 		local NumGrandChildren = #GrandChildren
 
-		for a = 1, NumGrandChildren do
-			local Descendant = GrandChildren[a]
-			local Name = Descendant.Name
-			Modules[NumDescendants + a], GrandChildren[a] = Descendant
+		if SetsEnabled then
+			if not LowerBoundary and Count > Boundaries[CurrentBoundary] then
+				LowerBoundary = true
+			elseif LowerBoundary and Count > Boundaries[CurrentBoundary + 1] then
+				CurrentBoundary = CurrentBoundary + 2
+				local Boundary = Boundaries[CurrentBoundary]
 
-			if Descendant.ClassName == "ModuleScript" then
-				Modules[Name] = Descendant
-				Descendant.Parent = find(lower(Name), "server") and LocalFolders.Modules or Repository
+				if Boundary then
+					LowerBoundary = Count > Boundary
+				else
+					SetsEnabled = false
+					LowerBoundary = false
+				end
 			end
+		end
+
+		local Server = LowerBoundary or find(lower(Name), "server")
+
+		if NumGrandChildren ~= 0 then
+			if Server then
+				SetsEnabled = true
+				Boundaries[BoundaryCount + 1] = NumDescendants
+				BoundaryCount = BoundaryCount + 2
+				Boundaries[BoundaryCount] = NumDescendants + NumGrandChildren
+			end
+
+			for a = 1, NumGrandChildren do
+				Modules[NumDescendants + a] = GrandChildren[a]
+			end
+		end
+
+		if Child.ClassName == "ModuleScript" then
+			if LowerBoundary or not Modules[Name] then
+				Modules[Name] = Child
+			end
+			Child.Parent = Server and LocalFolders.Modules or Repository
 		end
 		NumDescendants, Modules[Count] = NumDescendants + NumGrandChildren
 	until Count == NumDescendants
@@ -82,32 +119,26 @@ if game:GetService("RunService"):IsServer() then
 	ServerModules:Destroy()
 	Resources.Modules = Modules
 else
-	local find = string.find
-	local GetLocal = __index
 	LocalFolders = game.Players.LocalPlayer
+
 	if not FindFirstChild(LocalFolders, "Resources") then
 		new("Folder", LocalFolders).Name = "Resources"
 	end
-	LocalFolders = __index(Modules, "LocalResources")
 
-	function __index(self, Name) -- Client just gets a copy, no object creation
-		if find(Name, "^Local") then
-			return GetLocal(self, Name)
-		else
-			local Table = GetChildren(Folders[Name])
+	LocalFolders = __index({}, "LocalResources")
+	Folders = GetChildren(Folders[ModuleName])
 
-			for a = 1, #Table do
-				local Module = Table[a]
-				Table[Module.Name], Table[a] = Module
-			end
+	for a = 1, #Folders do
+		local Folder = Folders[a]
+		local Objects = GetChildren(Folder)
 
-			self[Name] = Table
-			return Table
+		for b = 1, #Objects do
+			local Object = Objects[b]
+			Objects[Object.Name], Objects[b] = Object
 		end
+		Resources[Folder.Name], Folders[a] = Objects
 	end
-
-	Folders = __index(Modules, ModuleName)
-	Modules = __index(Resources, "Modules")
+	Modules = Resources.Modules
 end
 Classes.Resources, Classes[ModuleName] = nil
 
@@ -115,10 +146,7 @@ local require = require
 Resources.LoadLibrary = setmetatable({}, {
 	__index = function(self, Name)
 		local Library = require(Modules[Name])
-		if Library == nil then
-			Library = false
-		end
-		self[Name] = Library
+		self[Name] = Library and Library or false
 		return Library
 	end
 })
