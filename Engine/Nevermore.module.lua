@@ -8,7 +8,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Configuration
 local FolderName = "Modules" -- Name of Module Folder in ModuleRepositoryLocation
-local ModuleRepositoryLocation = ServerStorage
+local ModuleRepositoryLocation = ServerScriptService
 local ResourcesLocation = ReplicatedStorage -- Where the "Resources" folder is, it will be generated if needed
 
 local Classes = { -- Allows for abbreviations
@@ -36,7 +36,6 @@ local function GetFirstChild(Parent, Name, Class) -- This is what allows the cli
 
 	return Object, Bool
 end
-local Retrieve, LocalResourcesLocation = GetFirstChild
 
 local function Error(Parent, Name, Class)
 	return Parent:FindFirstChild(Name) or error(("[Nevermore] %s \"%s\" is not installed."):format(Class, Name))
@@ -44,6 +43,7 @@ end
 
 local Nevermore = {GetFirstChild = GetFirstChild}
 local SmartFolder = {}
+local Retrieve, LocalResourcesLocation = GetFirstChild
 
 function SmartFolder:__call(this, Name, Parent)
 	if this ~= Nevermore then -- Enables functions to support calling by '.' or ':'
@@ -180,7 +180,7 @@ local GetModule = setmetatable({
 
 local LibraryCache = {}
 
-function Nevermore.LoadLibrary(self, Name) -- Custom Require function
+function Nevermore:LoadLibrary(Name) -- Custom Require function
 	Name = self ~= Nevermore and self or Name
 	local Library = LibraryCache[Name]
 	if Library == nil then
