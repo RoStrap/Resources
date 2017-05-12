@@ -7,7 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Configuration
-local FolderName = "Modules" -- Name of Module Folder in ServerScriptService
+local FolderName = "Modules" -- Name of Module Folder in ModuleRepositoryLocation
 local ModuleRepositoryLocation = ServerScriptService
 local ResourcesLocation = ReplicatedStorage -- Where the "Resources" folder is, it will be generated if needed
 
@@ -114,9 +114,9 @@ local Modules do -- Assembles table `Modules`
 	if RunService:IsServer() then
 		LocalResourcesLocation = ServerStorage
 		local Repository = GetFolder("Modules") -- Gets your new Module Repository Folder
-		local ModuleRepository = ModuleRepositoryLocation:FindFirstChild(FolderName or "Nevermore") or Retrieve(LocalResourcesLocation, "Resources", "Folder"):FindFirstChild("Modules") or error(("[Nevermore] Couldn't find the module repository. It should be a descendant of %s named %s"):format(ModuleRepositoryLocation.Name, FolderName or "Nevermore"))
-		ModuleRepository.Name = ModuleRepository.Name .. " "
-		local ServerRepository = GetLocalFolder("Modules")
+		local ModuleRepository = ModuleRepositoryLocation:FindFirstChild(FolderName) or Retrieve(LocalResourcesLocation, "Resources", "Folder"):FindFirstChild("Modules") or error(("[Nevermore] Couldn't find the module repository. It should be a descendant of %s named %s"):format(ModuleRepositoryLocation.Name, FolderName))
+		ModuleRepository.Name = ModuleRepository.Name .. " " -- This is just in-case we try to create a new folder of the same name
+		local ServerRepository
 		local Boundaries = {} -- This is a system for keeping track of which items should be stored in ServerStorage (vs ReplicatedStorage)
 		local Count, BoundaryCount = 0, 0
 		local NumDescendants, CurrentBoundary = 1, 1
@@ -128,7 +128,6 @@ local Modules do -- Assembles table `Modules`
 			local Child = Modules[Count]
 			local Name = Child.Name
 			local ClassName = Child.ClassName
-			local IsAModuleScript = ClassName == "ModuleScript"
 			local GrandChildren = Child:GetChildren()
 			local NumGrandChildren = #GrandChildren
 
@@ -164,12 +163,19 @@ local Modules do -- Assembles table `Modules`
 				NumDescendants = NumDescendants + NumGrandChildren
 			end
 
-			if IsAModuleScript then
-				if Server or not Modules[Name] then
+			if ClassName == "ModuleScript" then
+				if Server then
 					Modules[Name] = Child
-					Child.Parent = Server and ServerRepository or Repository
+					if not ServerRepository then
+						ServerRepository = GetLocalFolder("Modules")
+					end
+					Child.Parent = ServerRepository
 				else
 					Child.Parent = Repository
+				end
+
+				if not Modules[Name] then
+					Modules[Name] = Child
 				end
 			elseif ClassName ~= "Folder" and Child.Parent.ClassName == "Folder" then
 				Child.Parent = GetLocalFolder("ServerStuff", ServerScriptService)
@@ -180,6 +186,7 @@ local Modules do -- Assembles table `Modules`
 	else
 		LocalResourcesLocation = game:GetService("Players").LocalPlayer
 		GetFirstChild = game.WaitForChild
+		GetFolder.Retrieve = GetFirstChild
 	end
 end
 
@@ -190,7 +197,7 @@ function Nevermore.LoadLibrary(self, Name) -- Custom Require function
 	local Library = LibraryCache[Name]
 	if Library == nil then
 		Library = require(GetModule(Name))
-		LibraryCache[Name] = Library or false
+		LibraryCache[Name] = Library or false -- caches "nil" as false
 	end
 	return Library
 end
