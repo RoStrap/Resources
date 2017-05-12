@@ -31,18 +31,15 @@ Note: If you deviate from these instructions, it is not guaranteed to work
 This is the standard way of loading Nevermore onto either the Client or Server.
 ```lua
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Nevermore = require(ReplicatedStorage.Nevermore)
+local Nevermore = require(ReplicatedStorage:WaitForChild("Nevermore"))
 ```
-### Debugging
-If your game is still in-development, it is best to use the [debugging version of this module](https://github.com/NevermoreFramework/Nevermore/blob/master/Engine/Nevermore_Debug.module.lua). After you have successfully run the [debugging version](https://github.com/NevermoreFramework/Nevermore/blob/master/Engine/Nevermore_Debug.module.lua) without errors, you can use the [main version](https://github.com/NevermoreFramework/Nevermore/blob/master/Engine/Nevermore.module.lua).
-
 ### Functionality and API
-Upon being required for the first time on the Server, Nevermore indexes all of the modules in the Repository in ServerStorage and moves the ModuleScripts to ReplicatedStorage so that the Client can access them. Note that modules with "Server" in their name will not be replicated to ReplicatedStorage, and will only be accessible to the server.
+Upon being required for the first time on the Server, Nevermore indexes all of the modules in the Repository in ServerStorage and moves the ModuleScripts to ReplicatedStorage so that the Client can access them. Note that modules with "Server" in their name (or children of a Server folder) will not be replicated to ReplicatedStorage, and will only be accessible to the server.
 
-Nevermore's tables are basically just like the Folders they reference, however the tables do not contain properties as Folder Objects do. To fully understand this module, think of the tables mentioned as "Smart Folders".
+Nevermore's functions are basically just Folder managers. To fully understand this module, think of the tables mentioned as "Smart Folders".
 
 ```lua
-local Nevermore = require(game.ReplicatedStorage.Nevermore)
+local Nevermore = require(ReplicatedStorage:WaitForChild("Nevermore"))
 ```
 
 All of Nevermore's tables are procedurally generated (with the exception of the preloaded ModuleScripts table and `LoadLibrary` wrapper). This means that the first time the server calls for `Nevermore.RemoteEvents` it creates a table with storage `Folder` "RemoteEvents" inside of Nevermore (if one doesn't exist, one will be generated). `Nevermore.RemoteEvents` can then access any and everything within the `Folder` "RemoteEvents." If you reference a `RemoteEvent` that doesn't exist, one of the desired name will be generated. For example:
@@ -50,35 +47,37 @@ All of Nevermore's tables are procedurally generated (with the exception of the 
 ```lua
 local Nevermore = require(game.ReplicatedStorage.Nevermore)
 
--- The line below does the following:
+-- The line below does the following on the server:
 -- [1] Find `Nevermore` local variable (the one 3 lines above from here)
--- [2] Index the table of "RemoteEvents" inside `Nevermore`; create if none exists
--- [3] Retrieve "Chatted" in `RemoteEvents`; create if none exists
+-- [2] Index the function of "GetRemoteEvent" inside `Nevermore`; create if none exists
+-- [3] Retrieve "Chatted" in `RemoteEvents` folder; create if either doesn't exist
 -- [4] Store `RemoteEvent` "Chatted" in variable "CustomChatEvent" for later use
-local CustomChatEvent = Nevermore.RemoteEvents["Chatted"]
+local CustomChatEvent = Nevermore:GetRemoteEvent("Chatted")
+
+-- On the client, instead of creating the instance, it will yield for its creation
 ```
 
-Nevermore also comes with a `LoadLibrary` table, which is literally just a convenient wrapper to make a custom require-by-string function. It caches modules that have already ran and returned, making it more efficent than the built-in require upon subsequent calls. To use it, do like so:
+Nevermore also comes with a `LoadLibrary` table, which is basically just a convenient wrapper to make a custom require-by-string function. It caches modules that have already ran and returned, making it more efficient than the built-in require upon subsequent calls. To use it, do like so:
 ```lua
 local LoadLibrary = Nevermore.LoadLibrary
-local TweenModule = LoadLibrary["Tween"]
+local TweenModule = LoadLibrary("Tween")
 ```
 I like to overwrite the default require function with it, because you don't need both:
 ```lua
 local require = Nevermore.LoadLibrary
-local TweenModule = require["Tween"]
+local TweenModule = require("Tween")
 ```
 
 Otherwise, you can use the built-in global `require`:
 ```lua
-local TweenModule = require(Nevermore.Modules.Tween)
+local TweenModule = require(Nevermore:GetModule("Tween")
 ```
 
 If you want to access local storage (not replicated across the client-server model), you can add `Local` before the singular of the `FolderName` to access it. On the server, "local storage" is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, "local storage" is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Nevermore stores goes into folders named `Resources`.
 
 ```lua
 -- Server-side
-local GunThePlayerJustBought = Nevermore.LocalGun["Ak47"]
+local GunThePlayerJustBought = Nevermore:GetLocalGun("Ak47")
 -- Finds `ServerStorage.Resources.Guns.Ak47`
 -- Make sure the above exists if you want to use it for things that are not valid Roblox Classes
 -- Otherwise, Nevermore will error trying to do Instance.new("Gun")
@@ -90,17 +89,17 @@ GunThePlayerJustBought:Clone().Parent = PlayerBackpackThatBoughtIt
 The best way to understand this module in its simplicity is to see it in action
 ```lua
 local Nevermore = require(ReplicatedStorage.Nevermore)
-local CustomChatEvent = Nevermore.RemoteEvents["Chatted"] -- This shortcut is in the Configuration of Nevermore
-local CustomChatFunction = Nevermore.RemoteFunctions["ChatFunction"]
+local CustomChatEvent = Nevermore:GetRemoteEvent("Chatted") -- Can use either ":" or "."
+local CustomChatFunction = Nevermore.GetRemoteFunction("ChatFunction")
 ```
 
 ```lua
--- Using the default require function (faster)
-local TweenModule = require(Nevermore.Modules["Tween"])
+-- Using the default require function
+local TweenModule = require(Nevermore:GetModule("Tween"))
 
 -- Using the wrapper require function
 local require = Nevermore.LoadLibrary
-local TweenModule = require["Tween"]
+local TweenModule = require("Tween")
 ```
 
 #### Manage other things
@@ -108,7 +107,7 @@ Try using Nevermore to manage other things like Maps for a game! Make a Folder n
 
 ```lua
 local Nevermore = require(ReplicatedStorage.Nevermore)
-local Hometown = Nevermore.Maps["Hometown v2"]
+local Hometown = Nevermore:GetMap("Hometown v2")
 Hometown.Parent = workspace
 ```
 
