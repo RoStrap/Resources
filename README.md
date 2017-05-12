@@ -13,15 +13,15 @@ Nevermore has a long list features, some are in development, and others are full
 - [x] **Tested** - Nevermore is thoroughly tested before each release. It won't break your code.
 - [ ] **Easy Setup** - Nevermore's [installer plugin](https://github.com/NevermoreEngine/Installation-Plugin) will get Nevermore and the modules you want set up for you.
 - [x] **Plays well with others** - Nevermore won't interfere with other frameworks or your existing code.
-- [x] **Fast** - The majority of Nevermore's use is just indexing tables (something just-in-time Lua is one of the fastest languages at)
-- [x] **Light-weight** - With under 100 source lines of code, Nevermore is just a simple "Smart Folder"
+- [x] **Fast** - Nevermore is coded for optimal efficiency (feel free to submit a pull request if you can make it faster)
+- [x] **Light-weight** - Nevermore reuses the same functions for everything, so very little storage is wasted
 
 ## Getting Started
 
 The version of Nevermore in this repository will be distributed by the [Installer-Plugin] for [ROBLOX]. Until then, you can follow the following instructions:
 * Insert a `ModuleScript` into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) and name it something like "Resources" or "Nevermore"
 * Copy and paste the code from [Nevermore.module.lua](https://github.com/NevermoreFramework/Nevermore/blob/master/Engine/Nevermore.module.lua) into the ModuleScript
-* Make sure your Module repository is a `Folder` called "Modules" inside [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) containing only ModuleScripts and Folders
+* Make sure your Module repository is a `Folder` called "Modules" inside [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService) (or [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) if you changed it to that in the configuration) containing ModuleScripts and Folders that will run your codebase.
 
 Note: If you deviate from these instructions, it is not guaranteed to work
 
