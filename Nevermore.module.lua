@@ -25,7 +25,7 @@ if script.Name == "ModuleScript" then error("[Nevermore] Nevermore was never giv
 if script.ClassName ~= "ModuleScript" then error("[Nevermore] Nevermore must be a ModuleScript") end
 if script.Parent ~= ReplicatedStorage then error("[Nevermore] Nevermore must be parented to ReplicatedStorage") end
 
-local function GetFirstChild(Parent, Name, Class) -- This is what allows the client / server to run the same code
+local function GetFirstChild(Parent, Name, Class) -- This is what allows the client / server to run the same code :D
 	local Object, Bool = Parent:FindFirstChild(Name), false
 
 	if not Object then
