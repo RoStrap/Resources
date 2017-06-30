@@ -172,7 +172,7 @@ local Modules do -- Assembles table `Modules`
 					end
 				elseif ClassName ~= "Folder" and Child.Parent.ClassName == "Folder" then
 					if not ServerStuff then
-						ServerStuff = GetLocalFolder("Server", ServerScriptService)
+						ServerStuff = GetLocalFolder("Server")
 					end
 					Child.Parent = ServerStuff
 				end
