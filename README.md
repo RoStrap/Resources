@@ -73,7 +73,7 @@ local Falchion = Resources:GetSword("Falchion")
 ```
 
 If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, local storage is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, "local storage" is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Resources stores goes into folders named `Resources`.
-### Ideas
+## Ideas
 #### Map Changer
 Try using Resources to manage other things like Maps for a game! Make a Folder named "Maps" inside Resources and it can then be accessed!
 ```lua
