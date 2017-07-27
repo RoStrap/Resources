@@ -175,7 +175,7 @@ local Libraries, Repository do -- Assembles table `Libraries`
 
 					if ClassName ~= "Folder" and Child.Parent.ClassName == "Folder" then
 						if not ServerStuff then
-							ServerStuff = GetLocalFolder("Server", ServerScriptService)
+							ServerStuff = Retrieve(ServerScriptService, "Server", "Folder")
 						end
 						Child.Parent = ServerStuff
 					end
