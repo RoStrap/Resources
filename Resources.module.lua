@@ -3,11 +3,12 @@
 
 -- Services
 local ServerStorage = game:GetService("ServerStorage")
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Configuration
-local FolderName = "Repository" -- Name of Module Folder in ModuleRepositoryLocation
+local FolderName = "Repository"
 local ModuleRepositoryLocation = ServerStorage
 local ResourcesLocation = ReplicatedStorage -- Where the "Resources" folder is, it will be generated if needed
 local Classes = { -- Allows for abbreviations
@@ -50,7 +51,7 @@ local function GetLocalFolder()
 	return Retrieve(LocalResourcesLocation, "Resources", "Folder")
 end
 
--- Procedural function maker
+-- Procedural function generator
 local function CreateResourceFunction(self, FullName, Contents, Folder)
 	if type(FullName) == "string" then
 		local Name = FullName:gsub("^Get", "")
@@ -92,6 +93,7 @@ local function CreateResourceFunction(self, FullName, Contents, Folder)
 				Object, Bool = GetFirstChild(Folder, Name, Class)
 				Contents[Name] = Object
 			end
+
 			return Object, Bool or false
 		end
 
@@ -107,81 +109,44 @@ local Libraries, Repository do -- Assembles table `Libraries`
 		LocalResourcesLocation = ServerStorage
 		GetFolder, GetLocalFolder = CreateResourceFunction(Resources, "GetFolder"), CreateResourceFunction(Resources, "GetLocalFolder")
 		local LibraryRepository = ModuleRepositoryLocation:FindFirstChild(FolderName) or LocalResourcesLocation:FindFirstChild("Resources") and LocalResourcesLocation.Resources:FindFirstChild("Libraries")
+		
 		if LibraryRepository then
-			LibraryRepository.Name = LibraryRepository.Name .. " " -- This is just in-case we try to create a new folder of the same name
 			local ServerRepository, ServerStuff -- Repository folders
-			local Boundaries = {} -- This is a system for keeping track of which items should be stored in ServerStorage (vs ReplicatedStorage)
-			local Count, BoundaryCount = 0, 0
-			local NumDescendants, CurrentBoundary = 1, 1
-			local LowerBoundary, SetsEnabled
-			Libraries = {LibraryRepository}
+			
+			Libraries = CollectionService:GetTagged("ReplicatedLibraries")
+			local ModuleAmount = #Libraries
 
-			repeat -- Most efficient way of iterating over every descendant of the Module Repository, believe it or not
-				Count = Count + 1
-				local Child = Libraries[Count]
-				local Name = Child.Name
-				local ClassName = Child.ClassName
-				local GrandChildren = Child:GetChildren()
-				local NumGrandChildren = #GrandChildren
-
-				if SetsEnabled then
-					if not LowerBoundary and Count > Boundaries[CurrentBoundary] then
-						LowerBoundary = true
-					elseif LowerBoundary and Count > Boundaries[CurrentBoundary + 1] then
-						CurrentBoundary = CurrentBoundary + 2
-						local Boundary = Boundaries[CurrentBoundary]
-
-						if Boundary then
-							LowerBoundary = Count > Boundary
-						else
-							SetsEnabled = false
-							LowerBoundary = false
-						end
-					end
+			if ModuleAmount > 0 then
+				Repository = GetFolder("Libraries")
+				for a = 1, ModuleAmount do
+					local Library = Libraries[a]
+					Library.Parent = Repository
+					Libraries[Library.Name], Libraries[a] = Library
 				end
+			end
 
-				local Server = LowerBoundary or Name:lower():find("server")
+			ServerModules = CollectionService:GetTagged("ServerLibraries")
+			ModuleAmount = #ServerModules
 
-				if ClassName == "ModuleScript" then
-					if Server then
-						Libraries[Name] = Child
-						if not ServerRepository then
-							ServerRepository = GetLocalFolder("Libraries")
-						end
-						Child.Parent = ServerRepository
-					else
-						if not Repository then
-							Repository = GetFolder("Libraries")
-						end
-						Child.Parent = Repository
-						if not Libraries[Name] then
-							Libraries[Name] = Child
-						end
-					end
-				else					
-					if NumGrandChildren ~= 0 then
-						if Server then
-							SetsEnabled = true
-							Boundaries[BoundaryCount + 1] = NumDescendants
-							BoundaryCount = BoundaryCount + 2
-							Boundaries[BoundaryCount] = NumDescendants + NumGrandChildren
-						end
-
-						for a = 1, NumGrandChildren do
-							Libraries[NumDescendants + a] = GrandChildren[a]
-						end
-						NumDescendants = NumDescendants + NumGrandChildren
-					end
-
-					if ClassName ~= "Folder" and Child.Parent.ClassName == "Folder" then
-						if not ServerStuff then
-							ServerStuff = Retrieve(ServerScriptService, "Server", "Folder")
-						end
-						Child.Parent = ServerStuff
-					end
+			if ModuleAmount > 0 then
+				ServerRepository = GetLocalFolder("Libraries")
+				for a = 1, ModuleAmount do
+					local Library = ServerModules[a]
+					Library.Parent = ServerRepository
+					Libraries[Library.Name] = Library
 				end
-				Libraries[Count] = nil
-			until Count == NumDescendants
+			end
+
+			Miscellaneous = CollectionService:GetTagged("ServerThings")
+			ModuleAmount = #Miscellaneous
+
+			if ModuleAmount > 0 then
+				ServerStuff = Retrieve(ServerScriptService, "Server", "Folder")
+				for a = 1, ModuleAmount do
+					Miscellaneous[a].Parent = ServerStuff
+				end
+			end
+
 			LibraryRepository:Destroy()
 		else
 			warn(("%s:%d: Unable to locate %s.%s. Please see the configuration at the beginning of this file if this is the wrong location, otherwise LoadLibrary will error"):format(script:GetFullName(), debug.traceback():match("%d+"), ModuleRepositoryLocation.Name, FolderName))
