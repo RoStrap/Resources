@@ -109,7 +109,7 @@ local Libraries, Repository do -- Assembles table `Libraries`
 		LocalResourcesLocation = ServerStorage
 		GetFolder, GetLocalFolder = CreateResourceFunction(Resources, "GetFolder"), CreateResourceFunction(Resources, "GetLocalFolder")
 		local LibraryRepository = ModuleRepositoryLocation:FindFirstChild(FolderName) or LocalResourcesLocation:FindFirstChild("Resources") and LocalResourcesLocation.Resources:FindFirstChild("Libraries")
-		
+
 		if LibraryRepository then
 			local ServerRepository, ServerStuff -- Repository folders
 			
@@ -125,7 +125,7 @@ local Libraries, Repository do -- Assembles table `Libraries`
 				end
 			end
 
-			ServerModules = CollectionService:GetTagged("ServerLibraries")
+			local ServerModules = CollectionService:GetTagged("ServerLibraries")
 			ModuleAmount = #ServerModules
 
 			if ModuleAmount > 0 then
@@ -137,7 +137,7 @@ local Libraries, Repository do -- Assembles table `Libraries`
 				end
 			end
 
-			Miscellaneous = CollectionService:GetTagged("ServerThings")
+			local Miscellaneous = CollectionService:GetTagged("ServerThings")
 			ModuleAmount = #Miscellaneous
 
 			if ModuleAmount > 0 then
