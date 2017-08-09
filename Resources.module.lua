@@ -10,7 +10,6 @@ local ServerScriptService = game:GetService("ServerScriptService")
 -- Configuration
 local FolderName = "Repository"
 local ModuleRepositoryLocation = ServerStorage
-local ResourcesLocation = ReplicatedStorage -- Where the "Resources" folder is, it will be generated if needed
 local Classes = { -- Allows for abbreviations
 	Event = "RemoteEvent"; -- Allows you to use Resources:GetEvent() instead of Resources:GetRemoteEvent()
 }
@@ -76,15 +75,15 @@ local function CreateResourceFunction(self, FullName, Contents, Folder, Createab
 	return ResourceFunction
 end
 
-local Libraries, Repository do -- Assembles table `Libraries`
+-- Assemble `Libraries` table
+local Libraries, Repository do
 	if game:GetService("RunService"):IsServer() then
 		FindFirstChild, LocalResourcesLocation = game.FindFirstChild, ServerStorage
 		GetFolder, GetLocalFolder = CreateResourceFunction(Resources, "GetFolder", {}, script, true, true), CreateResourceFunction(Resources, "GetLocalFolder")
 		local LibraryRepository = FindFirstChild(ModuleRepositoryLocation, FolderName) or FindFirstChild(LocalResourcesLocation, "Resources") and FindFirstChild(LocalResourcesLocation.Resources, "Libraries")
 
 		if LibraryRepository then
-			local ServerRepository, ServerStuff -- Repository folders
-			
+			local ServerRepository, ServerStuff -- Repository folders			
 			Libraries = CollectionService:GetTagged("ReplicatedLibraries")
 			local ModuleAmount = #Libraries
 
@@ -133,7 +132,8 @@ end
 local LibraryCache = {}
 local GetLibrary = CreateResourceFunction(Resources, "GetLibrary", Libraries, Repository, false, true)
 
-function Resources:LoadLibrary(Name) -- Custom `require` function
+-- Custom `require` function
+function Resources:LoadLibrary(Name)
 	Name = self ~= Resources and self or Name
 	local Library = LibraryCache[Name]
 	if Library == nil then
