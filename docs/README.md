@@ -84,11 +84,18 @@ local Attacking = Resources:GetLocalBindableEvent("Attacking")
 -- Each instance not present will be generated (on both client and server)
 ```
 ## Tags
-Whether Libraries are replicated to the client or stay on the server is determined by the tags that individual libraries have at run-time. These tags are automatically assigned by the plugin, but you can modify them too:
+Whether Libraries are replicated to the client or stay on the server is determined by the tags that individual libraries have at run-time. These tags are automatically assigned by the plugin, but you can modify them too. [Here is a plug-in that allows you to add and remove Tags](https://www.roblox.com/library/945564020/Tag-Editor).
 
 The main Tags are `ServerLibraries` and `ReplicatedLibraries`. These determine whether a Library is put in the Server-accessible repository or the Client-accessible repository, respectively. You don't have to worry about the actual location of the Library objects, as you need only interact with the actual objects via the methods prescribed below.
 
 There are 3 other tags; the first being `ServerStuff`. At run-time, `ServerStuff` moves to Folder [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService).Server (it will be created if necessary. The other tags are `StarterPlayerScripts` and `StarterPlayerCharacter`; which are moved to their obvious proper location at run-time.
+
+There is actually another built-in function to Resources called `LoadTaggedLibraries`. It calls require on all Libraries with the `TagName` passed in the first parameter (mimicking the syntax of `CollectionService:GetTagged()`). However, it doesn't at the moment return anything, as the idea is to use it for Modules that should run code in the background. This function is brand new and subject to change.
+
+```lua
+Resources:LoadTaggedLibraries("Initialization")
+-- Does CollectionService:GetTagged("Initialization") and calls require on each
+```
 ### Ideas
 #### Map Changer
 Try using Resources to manage other things like Maps for a game! Make a Folder named "Maps" inside ReplicatedStorage.Resources and it can then be accessed!
