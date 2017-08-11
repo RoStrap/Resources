@@ -6,29 +6,30 @@
 [Resources.module.lua](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is designed to simplify the loading of libraries and unify the networking of resources between the client and server.
 
 ## Set-up
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plug-in [NOT RELEASED YET]. To manually install, run the following code in the command bar
-```lua
-require(821487025)()
-```
-You should now have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). This is where all of your ModuleScripts, which we will call Libraries, reside.
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using [the plug-in, which can be found here](https://www.roblox.com/library/725884332/RoStrap).
+
+You should now have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService). This is where all of your ModuleScripts, which we will call Libraries, reside.
 ## Initialization
 To start using the module, simply `require` it.
 ```lua
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 ```
-Upon requiring [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) on the server for the first time, it will move [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) from your `Repository` into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) so the client can access the libraries. These will be placed inside ReplicatedStorage.Resources.Modules
+#### Behavior
+Upon requiring [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) on the server for the first time, it will move [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) from your `Repository` into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) so the client can access your installed libraries. These will be accessible via the LoadLibrary method below, which is basically a require-by-string method. The server can access any library, while the client can't access the server libraries but can access the replicated libraries.
 
- Libraries with "Server" in their name or in the name of a parent folder will not be replicated to clients, and will only be accessible to the server (in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage)).
+Libraries with "Server" in either their name or in the name of an ancestor folder will not be replicated to clients, and will only be accessible to the server (in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage)).
+
 ## Functionality and API
-Resources' main purpose is to retrieve objects for use on both the client and server, both by the same function. This way modules can run the same code on both the client and server and be guaranteed the resource will always be properly obtained. This allows Modules to run the same code on both the Client and Server.
+Resources' main purpose is to retrieve objects for use on both the client and server, both by the same functions. This way Libraries can run the same code on both the client and server and be guaranteed the resource will always be properly obtained.
 
-There are a few built-in functions, all of which have [hybrid syntax with regards to calling](https://docs.crescentcode.net/Freya/Meta/Hybrid):
+All functions in Resources have [hybrid syntax with regards to calling](https://docs.crescentcode.net/Freya/Meta/Hybrid):
 
 #### LoadLibrary
 ```lua
 Variant LoadLibrary (string LibraryName)
--- @returns a Library with Name LibraryName
+-- require-by-string function
+-- Any Library installed in your Repository can be required via LoadLibrary(LibraryName)
 ```
 A library is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) (in ServerStorage.Repository) and its descendants.
 
@@ -60,8 +61,7 @@ Any instance type is compatible with [Resources](https://github.com/RoStrap/Reso
 -- called "Superman" inside ReplicatedStorage.Resources.TextLabels
 local Superman = Resources:GetTextLabel("Superman")
 ```
-
-In fact, Resources can also manage instances that aren't creatable by `Instance.new`. They must however, be preinstalled into Replicated.Resources. This basically allows you to do things like:
+In fact, Resources can also manage instance types that aren't creatable by `Instance.new`. They must however, be preinstalled into Replicated.Resources. This basically allows you to do things like the following:
 ```lua
 local Falchion = Resources:GetSword("Falchion")
 -- As long as this exists as Resources.Swords.Falchion,
@@ -72,10 +72,26 @@ local Falchion = Resources:GetSword("Falchion")
 -- to be named "Swords"
 ```
 
-If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, local storage is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, "local storage" is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Resources stores goes into folders named `Resources`.
+If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, local storage is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, "local storage" is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Resources stores goes into folders named `Resources`. Any computer (client or server) can instantiate instances on local storage.
+
+```lua
+local Attacking = Resources:GetLocalBindableEvent("Attacking")
+-- Finds LOCALSTORAGE.Resources.BindableEvents.Attacking,
+-- where LOCALSTORAGE is LocalPlayer on the client and ServerStorage on the Server,
+-- where "Resources" and "BindableEvents" are each Folder Objects,
+-- and Attacking is a BindableEvent Object
+
+-- Each instance not present will be generated (on both client and server)
+```
+## Tags
+Whether Libraries are replicated to the client or stay on the server is determined by the tags that individual libraries have at run-time. These tags are automatically assigned by the plugin, but you can modify them too:
+
+The main Tags are `ServerLibraries` and `ReplicatedLibraries`. These determine whether a Library is put in the Server-accessible repository or the Client-accessible repository, respectively. You don't have to worry about the actual location of the Library objects, as you need only interact with the actual objects via the methods prescribed below.
+
+There are 3 other tags; the first being `ServerStuff`. At run-time, `ServerStuff` moves to Folder [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService).Server (it will be created if necessary. The other tags are `StarterPlayerScripts` and `StarterPlayerCharacter`; which are moved to their obvious proper location at run-time.
 ### Ideas
 #### Map Changer
-Try using Resources to manage other things like Maps for a game! Make a Folder named "Maps" inside Resources and it can then be accessed!
+Try using Resources to manage other things like Maps for a game! Make a Folder named "Maps" inside ReplicatedStorage.Resources and it can then be accessed!
 ```lua
 local Resources = require(ReplicatedStorage.Resources)
 local Hometown = Resources:GetMap("Hometown v2")
@@ -93,4 +109,4 @@ GunThePlayerJustBought:Clone().Parent = PlayerBackpackThatBoughtIt
 ```
 
 ## Contact
-If you have any questions, concerns, or feature requests, feel free to [message Validark on roblox](https://www.roblox.com/messages/compose?recipientId=2966752). There is also a dedicated issues tab at the top of this page, should you feel inclined to use that. Please send all hatemail, noodles, or unsavory requests to [devSparkle](https://www.roblox.com/messages/compose?recipientId=1631699)
+If you have any questions, concerns, or feature requests, feel free to [message Validark on roblox](https://www.roblox.com/messages/compose?recipientId=2966752). There is also a dedicated issues tab at the top of this page, should you feel inclined to use that. Please send all hatemail, noodles, or unsavory requests to [devSparkle](https://www.roblox.com/messages/compose?recipientId=1631699).
