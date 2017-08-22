@@ -15,9 +15,9 @@ local Classes = { -- Allows for abbreviations
 }
 
 -- Assertions
-if script.Name ~= "Resources" then error("[Resources] Please change" .. script:GetFullName() .. "'s `Name` to \"Resources\"", 2) end
-if script.ClassName ~= "ModuleScript" then error("[Resources] Resources must be a ModuleScript", 2) end
-if script.Parent ~= ReplicatedStorage then error("[Resources] Resources must be a child of ReplicatedStorage", 2) end
+if script.Name ~= "Resources" then error("[Resources] Please change" .. script:GetFullName() .. "'s `Name` to \"Resources\"", 0) end
+if script.ClassName ~= "ModuleScript" then error("[Resources] Resources must be a ModuleScript", 0) end
+if script.Parent ~= ReplicatedStorage then error("[Resources] Resources must be a child of ReplicatedStorage", 0) end
 
 -- Core variables
 local Resources, LibraryCache, FindFirstChild, LocalResourcesLocation, GetFolder = {}, {}
@@ -36,7 +36,7 @@ local function GetLocalFolder() local Object = LocalResourcesLocation:FindFirstC
 
 -- Procedural function generator
 local function CreateResourceFunction(self, FullName, Folder, Createable, Determined)
-	if type(FullName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. type(FullName), 2) end
+	if type(FullName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. type(FullName), 0) end
 	local Name = gsub(FullName, "^Get", "")
 	local Class, Local = gsub(Classes[Name] or Name, "^Local", "")
 	local GetFolder, FindFirstChild, Contents = GetFolder, FindFirstChild
@@ -68,10 +68,10 @@ local function CreateResourceFunction(self, FullName, Folder, Createable, Determ
 					Object.Name = Name
 				elseif not Determined then
 					Createable, Object = pcall(Instance.new, Class, Folder)
-					Object.Name = Createable and Name or error(("[Resources] %s \"%s\" is not installed."):format(Class, Name), 2)
+					Object.Name = Createable and Name or error(("[Resources] %s \"%s\" is not installed."):format(Class, Name), 0)
 					Determined = true
 				else
-					error(("[Resources] %s \"%s\" is not installed."):format(Class, Name), 2)
+					error(("[Resources] %s \"%s\" is not installed."):format(Class, Name), 0)
 				end
 			end
 			Contents[Name] = Object
@@ -197,7 +197,7 @@ function Resources:LoadLibrary(Name)
 		Library = Libraries[Name]
 
 		if not Library then
-			Library = FindFirstChild(Repository, Name) or error(("[Resources] Library \"%s\" is not installed."):format(Name), 2)
+			Library = FindFirstChild(Repository, Name) or error(("[Resources] Library \"%s\" is not installed."):format(Name), 0)
 			Libraries[Name] = Library
 		end
 
