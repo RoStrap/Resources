@@ -1,5 +1,6 @@
--- @author Validark
+-- RoStrap's Core Bootstrapper
 -- @readme https://github.com/RoStrap/Resources
+-- @author Validark
 
 -- Services
 local ServerStorage = game:GetService("ServerStorage")
@@ -8,10 +9,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Configuration
-local FolderName = "Repository"
-local ModuleRepositoryLocation = ServerStorage
-local Classes = { -- Allows for abbreviations
-	Event = "RemoteEvent"; -- Allows you to use Resources:GetEvent() instead of Resources:GetRemoteEvent()
+local FOLDER_NAME = "Repository"
+local REPOSITORY_LOCATION = ServerStorage
+local ABBREVIATION_TABLE = { -- Allows for abbreviations
+	GetEvent = "GetRemoteEvent"; -- Allows you to use Resources:GetEvent() instead of Resources:GetRemoteEvent()
 }
 
 -- Assertions
@@ -20,7 +21,18 @@ if script.ClassName ~= "ModuleScript" then error("[Resources] Resources must be 
 if script.Parent ~= ReplicatedStorage then error("[Resources] Resources must be a child of ReplicatedStorage", 0) end
 
 -- Core variables
-local Resources, LibraryCache, FindFirstChild, LocalResourcesLocation, GetFolder = {}, {}
+local Resources = {}
+local LibraryCache = {}
+
+local GetFolder, Libraries, Repository, GetLocalFolder
+
+local FindFirstChild = game.FindFirstChild
+local LocalResourcesLocation = ServerStorage
+
+if not game:GetService("RunService"):IsServer() then
+	FindFirstChild = game.WaitForChild
+	repeat LocalResourcesLocation = game:GetService("Players").LocalPlayer until LocalResourcesLocation or not wait()
+end
 
 -- Localized functions
 local type = type
@@ -28,20 +40,17 @@ local pcall = pcall
 local require = require
 
 local gsub = string.gsub
-local Instantiate = Instance.new
+local Generate = Instance.new
 local GetChildren = game.GetChildren
-
--- Placeholder functions
-local function GetLocalFolder() local Object = LocalResourcesLocation:FindFirstChild("Resources") or Instance.new("Folder", LocalResourcesLocation) Object.Name = "Resources" return Object end
 
 -- Procedural function generator
 local function CreateResourceFunction(self, FullName, Folder, Createable, Determined)
-	if type(FullName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. type(FullName), 0) end
-	local Name = gsub(FullName, "^Get", "")
-	local Class, Local = gsub(Classes[Name] or Name, "^Local", "")
+	if type(FullName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(FullName), 0) end
+	local Name = gsub(ABBREVIATION_TABLE[FullName] or FullName, "^Get", "")
+	local Class, Local = gsub(Name, "^Local", "")
 	local GetFolder, FindFirstChild, Contents = GetFolder, FindFirstChild
 
-	if Local ~= 0 then -- Allow Peer to Instantiate Local Objects
+	if Local ~= 0 then -- Allow Peer to generate Local Objects
 		GetFolder, FindFirstChild = GetLocalFolder, game.FindFirstChild
 	end
 
@@ -64,7 +73,7 @@ local function CreateResourceFunction(self, FullName, Folder, Createable, Determ
 			if not Object then
 				Bool = true
 				if Createable then
-					Object = Instantiate(Class, Folder)
+					Object = Generate(Class, Folder)
 					Object.Name = Name
 				elseif not Determined then
 					Createable, Object = pcall(Instance.new, Class, Folder)
@@ -84,100 +93,100 @@ local function CreateResourceFunction(self, FullName, Folder, Createable, Determ
 	return ResourceFunction
 end
 
--- Assemble `Libraries` table
-local Libraries, Repository do
-	if game:GetService("RunService"):IsServer() then
-		FindFirstChild, LocalResourcesLocation = game.FindFirstChild, ServerStorage
-		GetFolder, GetLocalFolder = CreateResourceFunction(Resources, "GetFolder", script, true, true), CreateResourceFunction(Resources, "GetLocalFolder", nil, true, true)
-		local LibraryRepository = FindFirstChild(ModuleRepositoryLocation, FolderName) or FindFirstChild(LocalResourcesLocation, "Resources") and FindFirstChild(LocalResourcesLocation.Resources, "Libraries")
+-- GetFolder functions are used internally
+GetFolder = CreateResourceFunction(Resources, "GetFolder", script, true, true)
 
-		if LibraryRepository then
-			local ServerRepository, ServerStuff -- Repository folders			
-			Libraries = CollectionService:GetTagged("ReplicatedLibraries")
-			local ModuleAmount = #Libraries
+function GetLocalFolder(...)
+	local LocalResourcesFolder = LocalResourcesLocation:FindFirstChild("Resources") or Instance.new("Folder", LocalResourcesLocation)
+	LocalResourcesFolder.Name = "Resources"
+	GetLocalFolder = CreateResourceFunction(Resources, "GetLocalFolder", LocalResourcesFolder, true, true)
+	return GetLocalFolder(...)
+end
 
-			if ModuleAmount > 0 then
-				Repository = GetFolder("Libraries")
-				for a = 1, ModuleAmount do
-					local Library = Libraries[a]
-					Library.Parent = Repository
-					Libraries[Library.Name], Libraries[a] = Library
-				end
-			end
+local LibraryRepository = REPOSITORY_LOCATION:FindFirstChild(FOLDER_NAME) or LocalResourcesLocation:FindFirstChild("Resources") and FindFirstChild(LocalResourcesLocation.Resources, "Libraries")
 
-			local Modules = CollectionService:GetTagged("ServerLibraries")
-			ModuleAmount = #Modules
+if LibraryRepository then
+	local ServerRepository, ServerStuff -- Repository folders
 
-			if ModuleAmount > 0 then
-				ServerRepository = GetLocalFolder("Libraries")
-				for a = 1, ModuleAmount do
-					local Library = Modules[a]
-					Library.Parent = ServerRepository
-					Libraries[Library.Name] = Library
-				end
-			end
+	-- Assemble `Libraries` table
+	Libraries = CollectionService:GetTagged("ReplicatedLibraries")
+	local ModuleAmount = #Libraries
 
-			Modules = CollectionService:GetTagged("ServerThings")
-			ModuleAmount = #Modules
-
-			if ModuleAmount > 0 then
-				ServerStuff = FindFirstChild(ServerScriptService, "Server") or Instance.new("Folder", ServerScriptService)
-				ServerStuff.Name = "Server"
-				for a = 1, ModuleAmount do
-					Modules[a].Parent = ServerStuff
-				end
-			end
-
-			Modules = CollectionService:GetTagged("StarterPlayerScripts")
-			ModuleAmount = #Modules
-
-			if ModuleAmount > 0 then
-				local StarterPlayerScripts = game:GetService("StarterPlayer"):FindFirstChildOfClass("StarterPlayerScripts")
-				local Playerlist = game:GetService("Players"):GetPlayers()
-				for a = 1, ModuleAmount do
-					Modules[a].Parent = StarterPlayerScripts
-				end
-				
-				-- Make sure that Characters already loaded in receive this
-				for a = 1, #Playerlist do
-					local PlayerScripts = Playerlist[a]:FindFirstChild("PlayerScripts")
-					if PlayerScripts then
-						for a = 1, ModuleAmount do
-							Modules[a].Parent = PlayerScripts
-						end
-					end
-				end
-			end
-
-			Modules = CollectionService:GetTagged("StarterCharacterScripts")
-			ModuleAmount = #Modules
-
-			if ModuleAmount > 0 then
-				local StarterCharacterScripts = game:GetService("StarterPlayer"):FindFirstChildOfClass("StarterCharacterScripts")
-				local Playerlist = game:GetService("Players"):GetPlayers()
-				for a = 1, ModuleAmount do
-					Modules[a].Parent = StarterCharacterScripts
-				end
-				
-				-- Make sure that Characters already loaded in receive this
-				for a = 1, #Playerlist do
-					local Character = Playerlist[a].Character
-					if Character then
-						for a = 1, ModuleAmount do
-							Modules[a].Parent = Character
-						end
-					end
-				end
-			end
-
-			LibraryRepository:Destroy()
-		else
-			warn(("%s:%d: Unable to locate %s.%s. Please see the configuration at the beginning of this file if this is the wrong location, otherwise LoadLibrary will error"):format(script:GetFullName(), debug.traceback():match("%d+"), ModuleRepositoryLocation.Name, FolderName))
+	if ModuleAmount > 0 then
+		Repository = GetFolder("Libraries")
+		for a = 1, ModuleAmount do
+			local Library = Libraries[a]
+			Library.Parent = Repository
+			Libraries[Library.Name], Libraries[a] = Library
 		end
-	else
-		FindFirstChild, LocalResourcesLocation = game.WaitForChild, game:GetService("Players").LocalPlayer
-		GetFolder, GetLocalFolder = CreateResourceFunction(Resources, "GetFolder", script, true, true), CreateResourceFunction(Resources, "GetLocalFolder", nil, true, true)
 	end
+
+	local Modules = CollectionService:GetTagged("ServerLibraries")
+	ModuleAmount = #Modules
+
+	if ModuleAmount > 0 then
+		ServerRepository = GetLocalFolder("Libraries")
+		for a = 1, ModuleAmount do
+			local Library = Modules[a]
+			Library.Parent = ServerRepository
+			Libraries[Library.Name] = Library
+		end
+	end
+
+	Modules = CollectionService:GetTagged("ServerThings")
+	ModuleAmount = #Modules
+
+	if ModuleAmount > 0 then
+		ServerStuff = FindFirstChild(ServerScriptService, "Server") or Instance.new("Folder", ServerScriptService)
+		ServerStuff.Name = "Server"
+		for a = 1, ModuleAmount do
+			Modules[a].Parent = ServerStuff
+		end
+	end
+
+	Modules = CollectionService:GetTagged("StarterPlayerScripts")
+	ModuleAmount = #Modules
+
+	if ModuleAmount > 0 then
+		local StarterPlayerScripts = game:GetService("StarterPlayer"):FindFirstChildOfClass("StarterPlayerScripts")
+		local Playerlist = game:GetService("Players"):GetPlayers()
+		for a = 1, ModuleAmount do
+			Modules[a].Parent = StarterPlayerScripts
+		end
+		
+		-- Make sure that Characters already loaded in receive this
+		for a = 1, #Playerlist do
+			local PlayerScripts = Playerlist[a]:FindFirstChild("PlayerScripts")
+			if PlayerScripts then
+				for a = 1, ModuleAmount do
+					Modules[a].Parent = PlayerScripts
+				end
+			end
+		end
+	end
+
+	Modules = CollectionService:GetTagged("StarterCharacterScripts")
+	ModuleAmount = #Modules
+
+	if ModuleAmount > 0 then
+		local StarterCharacterScripts = game:GetService("StarterPlayer"):FindFirstChildOfClass("StarterCharacterScripts")
+		local Playerlist = game:GetService("Players"):GetPlayers()
+		for a = 1, ModuleAmount do
+			Modules[a].Parent = StarterCharacterScripts
+		end
+		
+		-- Make sure that Characters already loaded in receive this
+		for a = 1, #Playerlist do
+			local Character = Playerlist[a].Character
+			if Character then
+				for a = 1, ModuleAmount do
+					Modules[a].Parent = Character
+				end
+			end
+		end
+	end
+
+	LibraryRepository:Destroy()
 end
 
 -- Custom `require` function
@@ -209,6 +218,7 @@ end
 
 function Resources:LoadTaggedLibraries(Tag)
 	local Libraries = CollectionService:GetTagged(self ~= Resources and self or Tag)
+	
 	for a = 1, #Libraries do
 		local Library = Libraries[a]
 		local Name = Library.Name
