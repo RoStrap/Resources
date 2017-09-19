@@ -16,7 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 ```
 #### Behavior
-Upon requiring [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) on the server for the first time, it will move [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) from your `Repository` into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) so the client can access your installed libraries. These will be accessible via the LoadLibrary method below, which is basically a require-by-string method. The server can access any library, while the client can't access the server libraries but can access the replicated libraries.
+Upon requiring [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) on the server for the first time, it will move [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) from your `Repository` into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) so the client can access your installed libraries. These will be accessible via the LoadLibrary method below, which is basically a require-by-string method. The server can access any Library, while the client can't access the server libraries but can access the replicated libraries.
 
 Libraries with "Server" in either their name or in the name of an ancestor folder will not be replicated to clients, and will only be accessible to the server (in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage)).
 
@@ -31,7 +31,7 @@ Variant LoadLibrary (string LibraryName)
 -- require-by-string function
 -- Any Library installed in your Repository can be required via LoadLibrary(LibraryName)
 ```
-A library is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) (in ServerStorage.Repository) and its descendants.
+A Library is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) (in ServerStorage.Repository) and its descendants.
 
 ![](https://image.prntscr.com/image/hLnGGl3JST_vAZYnYadrGg.png)
 
