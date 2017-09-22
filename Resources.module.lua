@@ -159,7 +159,12 @@ if LibraryRepository then
 			local PlayerScripts = Playerlist[a]:FindFirstChild("PlayerScripts")
 			if PlayerScripts then
 				for a = 1, ModuleAmount do
-					Modules[a].Parent = PlayerScripts
+					local Clone = Modules[a]:Clone()
+					Clone.Disabled = true
+					Clone.Parent = PlayerScripts
+					delay(0, function()
+						Clone.Disabled = false
+					end)
 				end
 			end
 		end
@@ -179,8 +184,13 @@ if LibraryRepository then
 		for a = 1, #Playerlist do
 			local Character = Playerlist[a].Character
 			if Character then
-				for a = 1, ModuleAmount do
-					Modules[a].Parent = Character
+				for a = 1, ModuleAmount do					
+					local Clone = Modules[a]:Clone()
+					Clone.Disabled = true
+					Clone.Parent = Character
+					delay(0, function()
+						Clone.Disabled = false
+					end)
 				end
 			end
 		end
