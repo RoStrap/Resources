@@ -103,7 +103,7 @@ function GetLocalFolder(...)
 	return GetLocalFolder(...)
 end
 
-local LibraryRepository = REPOSITORY_LOCATION:FindFirstChild(FOLDER_NAME) or LocalResourcesLocation:FindFirstChild("Resources") and FindFirstChild(LocalResourcesLocation.Resources, "Libraries")
+local LibraryRepository = ServerStorage:FindFirstChild(FOLDER_NAME) or ServerScriptService:FindFirstChild(FOLDER_NAME) or LocalResourcesLocation:FindFirstChild("Resources") and FindFirstChild(LocalResourcesLocation.Resources, "Libraries")
 
 if LibraryRepository then
 	local ServerRepository, ServerStuff -- Repository folders
@@ -154,7 +154,7 @@ if LibraryRepository then
 			Modules[a].Parent = StarterPlayerScripts
 		end
 		
-		-- Make sure that Characters already loaded in receive this
+		-- Make sure that Players already loaded in receive this, doesn't work on Server
 		for a = 1, #Playerlist do
 			local PlayerScripts = Playerlist[a]:FindFirstChild("PlayerScripts")
 			if PlayerScripts then
