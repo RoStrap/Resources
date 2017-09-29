@@ -9,8 +9,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 -- Configuration
-local FOLDER_NAME = "Repository"
-local REPOSITORY_LOCATION = ServerStorage
 local ABBREVIATION_TABLE = { -- Allows for abbreviations
 	GetEvent = "GetRemoteEvent"; -- Allows you to use Resources:GetEvent() instead of Resources:GetRemoteEvent()
 }
@@ -35,13 +33,10 @@ if not game:GetService("RunService"):IsServer() then
 end
 
 -- Localized functions
+local gsub = string.gsub
 local type = type
 local pcall = pcall
 local require = require
-
-local gsub = string.gsub
-local Generate = Instance.new
-local GetChildren = game.GetChildren
 
 -- Procedural function generator
 local function CreateResourceFunction(self, FullName, Folder, Createable, Determined)
@@ -59,7 +54,7 @@ local function CreateResourceFunction(self, FullName, Folder, Createable, Determ
 
 		if not Contents then
 			Folder = Folder or GetFolder(gsub(Class, "([bcdfghjklmnpqrstvwxz])y$", "%1ie") .. "s")
-			Contents = GetChildren(Folder)
+			Contents = Folder:GetChildren()
 			for a = 1, #Contents do
 				local Child = Contents[a]
 				Contents[Child.Name], Contents[a] = Child
@@ -73,7 +68,7 @@ local function CreateResourceFunction(self, FullName, Folder, Createable, Determ
 			if not Object then
 				Bool = true
 				if Createable then
-					Object = Generate(Class, Folder)
+					Object = Instance.new(Class, Folder)
 					Object.Name = Name
 				elseif not Determined then
 					Createable, Object = pcall(Instance.new, Class, Folder)
@@ -103,7 +98,7 @@ function GetLocalFolder(...)
 	return GetLocalFolder(...)
 end
 
-local LibraryRepository = ServerStorage:FindFirstChild(FOLDER_NAME) or ServerScriptService:FindFirstChild(FOLDER_NAME) or LocalResourcesLocation:FindFirstChild("Resources") and FindFirstChild(LocalResourcesLocation.Resources, "Libraries")
+local LibraryRepository = ServerStorage:FindFirstChild("Repository") or ServerScriptService:FindFirstChild("Repository")
 
 if LibraryRepository then
 	local ServerRepository, ServerStuff -- Repository folders
@@ -206,7 +201,7 @@ function Resources:LoadLibrary(Name)
 	if Library == nil then
 		if not Libraries then
 			Repository = GetFolder("Libraries")
-			Libraries = GetChildren(Repository)
+			Libraries = Repository:GetChildren()
 			for a = 1, #Libraries do
 				local Library = Libraries[a]
 				Libraries[Library.Name], Libraries[a] = Library
@@ -221,7 +216,7 @@ function Resources:LoadLibrary(Name)
 		end
 
 		Library = require(Library)
-		LibraryCache[Name] = Library or false -- caches "nil" as false
+		LibraryCache[Name] = Library or false -- caches `nil` as false
 	end
 	return Library
 end
@@ -233,7 +228,7 @@ function Resources:LoadTaggedLibraries(Tag)
 		local Library = Libraries[a]
 		local Name = Library.Name
 		if LibraryCache[Name] == nil then
-			LibraryCache[Name] = require(Library) or false -- caches "nil" as false
+			LibraryCache[Name] = require(Library) or false -- caches `nil` as false
 		end
 	end
 end
