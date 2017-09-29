@@ -22,7 +22,7 @@ if script.Parent ~= ReplicatedStorage then error("[Resources] Resources must be 
 local Resources = {}
 local LibraryCache = {}
 
-local GetFolder, Libraries, Repository, GetLocalFolder
+local GetFolder, Libraries, Repository
 
 local FindFirstChild = game.FindFirstChild
 local LocalResourcesLocation = ServerStorage
@@ -30,6 +30,12 @@ local LocalResourcesLocation = ServerStorage
 if not game:GetService("RunService"):IsServer() then
 	FindFirstChild = game.WaitForChild
 	repeat LocalResourcesLocation = game:GetService("Players").LocalPlayer until LocalResourcesLocation or not wait()
+end
+
+local function GetLocalFolder()
+	local LocalResourcesFolder = LocalResourcesLocation:FindFirstChild("Resources") or Instance.new("Folder", LocalResourcesLocation)
+	LocalResourcesFolder.Name = "Resources"
+	return LocalResourcesFolder
 end
 
 -- Localized functions
@@ -90,13 +96,7 @@ end
 
 -- GetFolder functions are used internally
 GetFolder = CreateResourceFunction(Resources, "GetFolder", script, true, true)
-
-function GetLocalFolder(...)
-	local LocalResourcesFolder = LocalResourcesLocation:FindFirstChild("Resources") or Instance.new("Folder", LocalResourcesLocation)
-	LocalResourcesFolder.Name = "Resources"
-	GetLocalFolder = CreateResourceFunction(Resources, "GetLocalFolder", LocalResourcesFolder, true, true)
-	return GetLocalFolder(...)
-end
+GetLocalFolder = CreateResourceFunction(Resources, "GetLocalFolder", false, true, true)
 
 local LibraryRepository = ServerStorage:FindFirstChild("Repository") or ServerScriptService:FindFirstChild("Repository")
 
