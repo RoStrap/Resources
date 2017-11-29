@@ -38,17 +38,11 @@ local function GetLocalFolder()
 	return LocalResourcesFolder
 end
 
--- Localized functions
-local gsub = string.gsub
-local type = type
-local pcall = pcall
-local require = require
-
 -- Procedural function generator
 local function CreateResourceFunction(self, FullName, Folder, Createable, Determined)
 	if type(FullName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(FullName), 0) end
-	local Name = gsub(ABBREVIATION_TABLE[FullName] or FullName, "^Get", "")
-	local Class, Local = gsub(Name, "^Local", "")
+	local Name = (ABBREVIATION_TABLE[FullName] or FullName):gsub("^Get", "")
+	local Class, Local = Name:gsub("^Local", "")
 	local GetFolder, FindFirstChild, Contents = GetFolder, FindFirstChild
 
 	if Local ~= 0 then -- Allow Peer to generate Local Objects
@@ -59,7 +53,7 @@ local function CreateResourceFunction(self, FullName, Folder, Createable, Determ
 		if self ~= Resources then Name = self end -- Hybrid syntax ('.' or ':')
 
 		if not Contents then
-			Folder = Folder or GetFolder(gsub(Class, "([bcdfghjklmnpqrstvwxz])y$", "%1ie") .. "s")
+			Folder = Folder or GetFolder(Class:gsub("([bcdfghjklmnpqrstvwxz])y$", "%1ie") .. "s")
 			Contents = Folder:GetChildren()
 			for a = 1, #Contents do
 				local Child = Contents[a]
@@ -216,7 +210,7 @@ function Resources:LoadLibrary(Name)
 		end
 
 		Library = require(Library)
-		LibraryCache[Name] = Library or false -- caches `nil` as false
+		LibraryCache[Name] = Library
 	end
 	return Library
 end
@@ -228,7 +222,7 @@ function Resources:LoadTaggedLibraries(Tag)
 		local Library = Libraries[a]
 		local Name = Library.Name
 		if LibraryCache[Name] == nil then
-			LibraryCache[Name] = require(Library) or false -- caches `nil` as false
+			LibraryCache[Name] = require(Library)
 		end
 	end
 end
