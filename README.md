@@ -1,5 +1,5 @@
 # Resources
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-loader for [RoStrap](https://rostrap.github.io/)
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap)
 
 ![](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)
 
