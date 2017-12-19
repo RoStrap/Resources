@@ -5,7 +5,7 @@
 local Libraries = {}
 local Createable = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true}
 local ServerSide = game:GetService("RunService"):IsServer()
-local LocalResourcesLocation, LibraryRepository, Wrappers
+local LocalResourcesLocation, LibraryRepository
 
 local function Get(_, Name, MethodName, ...)
 	if ... then error("[Resources] " .. tostring(select(select("#", ...), ...) or "Functions") .. " should be called with only one parameter", 0) end
@@ -106,7 +106,7 @@ if TagLibraryFolder then
 		end
 	end
 end
-if LibraryRepository then LibraryRepository:Destroy() end
+if LibraryRepository then LibraryRepository = LibraryRepository:Destroy() end
 
 local Resources = newproxy(true)
 local Metatable = getmetatable(Resources)
@@ -114,7 +114,7 @@ Metatable.__namecall = Get
 Metatable.__metatable = "The metatable is locked"
 function Metatable:__index(MethodName) -- For deprecated syntax support. Please do not use `.` as in `Resources.LoadLibrary`
 	if type(MethodName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(MethodName), 0) end
-	Wrappers = Wrappers or {}
+	Wrappers = Wrappers or {} -- Doesn't get its own local variable because it is deprecated
 	local Function = Wrappers[MethodName] or function(...) if select("#", ...) ~= 1 then error("[Resources] " .. MethodName .. " should be called with only one parameter", 0) end return Get(nil, ..., MethodName) end
 	Wrappers[MethodName] = Function
 	return Function
