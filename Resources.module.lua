@@ -8,13 +8,13 @@ local ServerSide = game:GetService("RunService"):IsServer()
 local LocalResourcesLocation, LibraryRepository
 
 local function Get(_, Name, MethodName, ...)
-	if ... then error("[Resources] " .. tostring(select(select("#", ...), ...) or "Functions") .. " should be called with only one parameter", 0) end
+	if ... then error("[Resources] " .. tostring(select(select("#", ...), ...) or "Functions") .. " should be called with only one parameter", 2) end
 
 	if MethodName == "LoadLibrary" then
 		return require(Libraries[Name] or Get(nil, Name, "GetLibrary"))
 	else
 		local FolderName, Folder, Object
-		if MethodName:sub(1, 3) == "Get" then MethodName = MethodName:sub(4) else error("[Resources] Methods should begin with \"Get\"", 0) end
+		if MethodName:sub(1, 3) == "Get" then MethodName = MethodName:sub(4) else error("[Resources] Methods should begin with \"Get\"", 2) end
 
 		if MethodName:byte(-1) == 121 then
 			local Last = MethodName:byte(-2)
@@ -64,7 +64,7 @@ local function Get(_, Name, MethodName, ...)
 				if FolderName then
 					Object.Name, Createable[MethodName] = Name, true
 				else
-					error(("[Resources] %s \"%s\" is not installed."):format(MethodName, Name), 0)
+					error(("[Resources] %s \"%s\" is not installed."):format(MethodName, Name), 2)
 				end
 			end
 			return Object, true
@@ -113,9 +113,9 @@ local Metatable = getmetatable(Resources)
 Metatable.__namecall = Get
 Metatable.__metatable = "The metatable is locked"
 function Metatable:__index(MethodName) -- For deprecated syntax support. Please do not use `.` as in `Resources.LoadLibrary`
-	if type(MethodName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(MethodName), 0) end
+	if type(MethodName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(MethodName), 2) end
 	Wrappers = Wrappers or {} -- Doesn't get its own local variable because it is deprecated
-	local Function = Wrappers[MethodName] or function(...) if select("#", ...) ~= 1 then error("[Resources] " .. MethodName .. " should be called with only one parameter", 0) end return Get(nil, ..., MethodName) end
+	local Function = Wrappers[MethodName] or function(...) if select("#", ...) ~= 1 then error("[Resources] " .. MethodName .. " should be called with only one parameter", 2) end return Get(nil, ..., MethodName) end
 	Wrappers[MethodName] = Function
 	return Function
 end
