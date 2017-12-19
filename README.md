@@ -81,15 +81,17 @@ local Attacking = Resources:GetLocalBindableEvent("Attacking")
 ## Tags
 Whether Libraries are replicated to the client or stay on the server is determined by the tags that individual libraries have at run-time. These tags are automatically assigned by the plugin, but you can modify them too. [Here is a plug-in that allows you to add and remove Tags](https://www.roblox.com/library/1051649865/Tags).
 
-The main Tags are `ServerLibraries` and `ReplicatedLibraries`. These determine whether a Library is put in the Server-accessible repository or the Client-accessible repository, respectively. You don't have to worry about the actual location of the Library objects, as you need only interact with the actual objects via the methods prescribed below.
+The built-in Tags are `ServerLibraries` and `ReplicatedLibraries`. These determine whether a Library is put in the Server-accessible repository or the Client-accessible repository, respectively. You don't have to worry about the actual location of the Library objects, as you need only interact with the actual objects via the methods prescribed below.
 
-There are 3 other lesser-used tags; the first being `ServerStuff`. At run-time, `ServerStuff` moves to Folder [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService).Server (it will be generated if necessary. The other tags are `StarterPlayerScripts` and `StarterPlayerCharacter`, which are moved to their obvious proper location at run-time.
+Resources has built-in tag extendability, so the developer can assign tags to Libraries and Resources will run a user-defined function at run-time. Simply put a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called "LibraryTags" inside of [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) and insert a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) inside with the name of the tag whose behavior you wish to define. The module should return a function with parameters `(table Modules, number ModuleCount, table Libraries)` where `Modules` is a table of objects with the assigned tag, `MoudleCount` is `#Modules` (we want you to use a simple for loop) and `Libraries` is the internal table filled with all of the Libraries accessible to `Resources:LoadLibrary("LibraryName")`.
+
+There are 3 tags automatically supported by the plugin; the first being `ServerStuff`. At run-time, `ServerStuff` moves to [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService).Server (it will be generated if necessary). The other tags are `StarterPlayerScripts` and `StarterPlayerCharacter`, which are moved to their obvious proper location at run-time. If you give any of these 3 tags to any Library within your Repository the plugin will automatically setup the necessary "LibraryTags" [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) with the defined behavior within a ModuleScript.
 
 ### Ideas
 #### Map Changer
-Try using Resources to manage other things like Maps for a game! Make a Folder named "Maps" inside ReplicatedStorage.Resources and it can then be accessed!
+Try using Resources to manage other things like Maps for a game! Make a Folder named "Maps" inside `ReplicatedStorage.Resources` and it can then be accessed!
 ```lua
-local Resources = require(ReplicatedStorage.Resources)
+local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 local Hometown = Resources:GetMap("Hometown v2")
 Hometown.Parent = workspace
 ```
