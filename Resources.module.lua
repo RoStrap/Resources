@@ -41,7 +41,9 @@ local function Get(_, Name, MethodName, ...)
 
 			Object = Folder:FindFirstChild(Name)
 		else
-			Folder = FolderName == "Folders" and script or not ServerSide and script:WaitForChild(FolderName) or script:FindFirstChild(FolderName)
+			Folder = FolderName == "Folders" and script or not ServerSide and
+				(script:WaitForChild(FolderName, 5) or warn("[Resources] Please make sure to require \"Resources\" on the Server") or script:WaitForChild(FolderName, math.huge))
+				or script:FindFirstChild(FolderName)
 
 			if not Folder then
 				Folder = Instance.new("Folder")
