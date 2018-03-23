@@ -79,7 +79,7 @@ local Attacking = Resources:GetLocalBindableEvent("Attacking")
 -- Each instance not present will be generated (on both client and server)
 ```
 ## Tags
-Whether Libraries are replicated to the client or stay on the server is determined by the tags that individual libraries have at run-time. These tags are automatically assigned by the plugin, but you can modify them too. [Here is a plug-in that allows you to add and remove Tags](https://www.roblox.com/library/1051649865/Tags).
+Whether Libraries are replicated to the client or stay on the server is determined by the tags that individual libraries have at run-time. These tags are automatically assigned by the plugin, but you can modify them too. [Here is a plug-in that allows you to add and remove Tags](https://www.roblox.com/library/948084095/TagPlugin).
 
 The built-in Tags are `ServerLibraries` and `ReplicatedLibraries`. These determine whether a Library is put in the Server-accessible repository or the Client-accessible repository, respectively. You don't have to worry about the actual location of the Library objects, as you need only interact with the actual objects via the methods prescribed below.
 
