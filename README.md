@@ -4,7 +4,7 @@
 ## Set-up
 [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plug-in, which can be found here:
 
-![https://www.roblox.com/library/725884332/RoStrap](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)
+[![](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)](https://www.roblox.com/library/725884332/RoStrap)
 
 After installing, you should have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService). This is where all of your [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript), which are referred to as "Libraries", reside.
 
