@@ -1,13 +1,13 @@
-# ![](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)
-
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap)
-
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is designed to simplify the loading of libraries and unify the networking of resources between the client and server.
+# Resources
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to simplify the loading of libraries and unify the networking of resources between the client and server.
 
 ## Set-up
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using [the plug-in, which can be found here](https://www.roblox.com/library/725884332/RoStrap).
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plug-in, which can be found here:
 
-You should now have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService). This is where all of your ModuleScripts, which we will call Libraries, reside.
+![https://www.roblox.com/library/725884332/RoStrap](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)
+
+After installing, you should have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService). This is where all of your [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript), which are referred to as "Libraries", reside.
+
 ## Initialization
 To start using the module, simply `require` it.
 ```lua
@@ -15,14 +15,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 ```
 #### Behavior
-Upon requiring [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) on the server for the first time, it will move [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) from your `Repository` into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) so the client can access your installed libraries. These will be accessible via the LoadLibrary method below, which is basically a require-by-string method. The server can access any Library, while the client can't access the server libraries but can access the replicated libraries.
+Upon requiring [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) on the server for the first time, it will move [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) from your `Repository` into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) so the client can access your installed libraries. These will be accessible via the LoadLibrary method below, which is basically a require-by-string method which ignores heiarchy. The server can access any Library, while the client can't access the server libraries but can access the replicated libraries.
 
 Libraries with "Server" in either their name or in the name of an ancestor folder will not be replicated to clients, and will only be accessible to the server (in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage)).
 
 ![](https://image.prntscr.com/image/ZonjgCDFQLabru0xbMBUNQ.png)
 
 ## Functionality and API
-Resources' main purpose is to retrieve objects for use on both the client and server, both by the same functions. This way Libraries can run the same code on both the client and server and be guaranteed the resource will always be properly obtained.
+The main purpose of `Resources` is to retrieve objects for use on both the client and server, both by the same functions. This means Libraries can run the same code on both the client and server and be guaranteed the resource will always be properly obtained.
 
 All functions in `Resources` should be called using method syntax, however the following is supported in addition to method syntax:
 ```lua
@@ -44,25 +44,25 @@ To load the `Tween` Library, we would do the following:
 ```lua
 local Tween = Resources:LoadLibrary("Tween")
 ```
-Many Libraries developed outside the Resources bootstrapper system rely on using the built-in `require` function on child ModuleScripts, which is why descendants of Libraries are left unmoved. The example below demonstrates how heirarchy within the repository is ignored during replication, except under ModuleScripts (CustomFont by EgoMoose gets to keep its descendants).
+Many Libraries developed outside the `Resources` bootstrapper system rely on using the built-in `require` function on child ModuleScripts, which is why descendants of Libraries are left unmoved. The example below demonstrates how heirarchy within the repository is ignored during replication, except under ModuleScripts (CustomFont by EgoMoose gets to keep its descendants).
 
 ![](https://image.prntscr.com/image/ZonjgCDFQLabru0xbMBUNQ.png)
 
 #### Get Functions
-The rest of the functions within [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) are procedurally generated, in the form of `GetCLASSNAME` with string parameter `Name`. These functions return an instance under ReplicatedStorage.Resources.CLASSNAMES called `Name`. On the server, missing instances will be generated. On the client, the function will yield until the missing instances are generated by the server.
+The rest of the functions within `Resources` are procedurally generated, in the form of `GetCLASSNAME` with string parameter `Name`. These functions return an instance under `ReplicatedStorage.Resources.CLASSNAMES` called `Name`. On the server, missing instances will be generated. On the client, the function will yield until the missing instances are generated by the server.
 ```lua
 local Chatted = Resources:GetRemoteEvent("Chatted")
 local ClientLoaded = Resources:GetRemoteFunction("ClientLoaded")
 ```
 
-Any instance type is compatible with [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua):
+Any instance type is compatible with `Resources`:
 
 ```lua
 -- Not sure why you would need to, but this retrieves a TextLabel
 -- called "Superman" inside ReplicatedStorage.Resources.TextLabels
 local Superman = Resources:GetTextLabel("Superman")
 ```
-In fact, Resources can also manage instance types that aren't creatable by `Instance.new`. They must however, be preinstalled into Replicated.Resources. This basically allows you to do things like the following:
+In fact, `Resources` can also manage instance types that aren't creatable by `Instance.new`. They must however, be preinstalled into `Replicated.Resources`. This basically allows you to do things like the following:
 ```lua
 local Falchion = Resources:GetSword("Falchion")
 -- As long as this exists as Resources.Swords.Falchion,
@@ -76,6 +76,11 @@ local Falchion = Resources:GetSword("Falchion")
 
 #### GetLocal Functions
 If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, local storage is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, "local storage" is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Resources stores goes into folders named `Resources`. Any computer (client or server) can instantiate instances on local storage.
+
+|LocalStorage|**Location**|
+|:-----:|:----:|
+|Server|ServerStorage.Resources|
+|Client|Players.LocalPlayer.Resources|
 
 ```lua
 local Attacking = Resources:GetLocalBindableEvent("Attacking")
