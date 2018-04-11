@@ -99,7 +99,7 @@ for a = 1, 2 do
 			local Library = Modules[i]
 			Library.Parent = Repository
 			Libraries[Library.Name] = Libraries[Library.Name] and not (a == 2 and CollectionService:HasTag(Libraries[Library.Name], "ReplicatedLibraries")) and
-				error("[Resources] Duplicate Library names. Overshadowing is only permitted when a ServerLibrary overshadows a ReplicatedLibrary", 0) or Library
+				error("[Resources] Duplicate Libraries named \"" .. Library.Name .. "\". Overshadowing is only permitted when a ServerLibrary overshadows a ReplicatedLibrary", 0) or Library
 		end
 	end
 end
