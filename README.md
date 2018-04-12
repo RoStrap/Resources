@@ -2,7 +2,7 @@
 [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to simplify the loading of libraries and unify the networking of resources between the client and server.
 
 ## Set-up
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plug-in, which can be found here:
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plug-in, which can installed after clicking the logo below:
 
 [![](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)](https://www.roblox.com/library/725884332/RoStrap)
 
