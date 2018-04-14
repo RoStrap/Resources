@@ -23,7 +23,7 @@ local MakeGetterFunction do
 	local ServerSide = RunService:IsServer()
 	local ShouldReplicate = ServerSide and not RunService:IsClient()
 	local require, Instance_new = require, Instance.new
-	local CreateableInstances = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true}
+	local CreateableInstances = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true; Library = false}
 
 	local LocalResourcesLocation, LibraryRepository, GetFolder
 
@@ -53,15 +53,15 @@ local MakeGetterFunction do
 
 			Createable = CreateableInstances[InstanceType]
 
-			if not Createable then -- In order to create a new method, the Folder must already be installed with elements, or the instance must be creatable
+			if Createable == nil then -- In order to create a new method, the Folder must already be installed with elements, or the instance must be creatable
 				local GeneratedInstance
 				Createable, GeneratedInstance = pcall(Instance_new, InstanceType)
-				local ResourcesLocation = IsLocal and LocalResourcesLocation or script
+				local ResourcesLocation = IsLocal and LocalResourcesLocation:FindFirstChild("Resources") or script
 				if Createable and GeneratedInstance then
 					GeneratedInstance:Destroy()
-				elseif not Createable and (not ResourcesLocation:FindFirstChild(FolderName) or 0 == #ResourcesLocation:FindFirstChild(FolderName):GetChildren()) then
-					warn(("[Resources] Uncreatable instances must be pre-installed inside %s.Resources.%s in order to be fetched by %s")
-						:format(ResourcesLocation:GetFullName(), FolderName, MethodName))
+				elseif not Createable and (not ResourcesLocation or not ResourcesLocation:FindFirstChild(FolderName) or 0 == #ResourcesLocation:FindFirstChild(FolderName):GetChildren()) then
+					warn(("[Resources] %s must be pre-installed inside %s.Resources.%s in order to be fetched by %s")
+						:format(FolderName, ResourcesLocation:GetFullName():gsub("%.Resources$", "", 1), FolderName, MethodName))
 				end
 			end
 
