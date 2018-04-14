@@ -73,8 +73,8 @@ local MakeGetterFunction do
 					end
 
 					if Warn then
-						warn(("[Resources] %s must be pre-installed inside %s.Resources.%s in order to be fetched by %s")
-							:format(FolderName, ResourcesLocation:GetFullName():gsub("%.Resources$", "", 1), FolderName, MethodName))
+						warn("[Resources]", FolderName, ("must be pre-installed inside %s.Resources.%s in order to be fetched by")
+							:format(ResourcesLocation:GetFullName():gsub("%.Resources$", "", 1), FolderName), MethodName)
 					end
 				end
 			end
@@ -136,8 +136,9 @@ local MakeGetterFunction do
 					if ShouldReplicate then
 						Library.Parent = Repository
 					end
-					Libraries[Library.Name] = Libraries[Library.Name] and not (a == 2 and CollectionService:HasTag(Libraries[Library.Name], "ReplicatedLibraries")) and
-						error("[Resources] Duplicate Libraries named \"" .. Library.Name .. "\". Overshadowing is only permitted when a ServerLibrary overshadows a ReplicatedLibrary", 0)
+					Libraries[Library.Name] = Libraries[Library.Name] and (not (a == 2 and CollectionService:HasTag(Libraries[Library.Name], "ReplicatedLibraries")) and
+						error("[Resources] Duplicate Libraries named \"" .. Library.Name .. "\". Overshadowing is only permitted when a ServerLibrary overshadows a ReplicatedLibrary", 0) or
+						ServerSide and not ShouldReplicate and warn("[Resources] In the absence of a client, the client-version of", Library.Name, "will be inaccessible."))
 						or Library
 				end
 				if a == 1 and Repository then
@@ -156,7 +157,7 @@ local MakeGetterFunction do
 			local ModuleCount = #Modules
 			if ModuleCount > 0 then
 				local Success, Error = pcall(require(TagLibrary), Modules, ModuleCount, Resources:GetLocalTable("Libraries"))
-				if not Success then warn("[Resources] An error occurred while loading", TagLibrary.Name .. ":", Error) end
+				if not Success then warn("[Resources] An error occurred while loading", TagLibrary.Name .. ":\n", Error) end
 			end
 		end
 	end
