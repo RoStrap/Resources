@@ -70,6 +70,7 @@ local MakeGetterFunction do
 
 		local function GetFunction(this, InstanceName)
 			InstanceName = this ~= self and this or InstanceName
+			if type(InstanceName) ~= "string" then error("[Resources] " .. MethodName .. " expected a string parameter, got " .. typeof(InstanceName), 2) end
 
 			if not Folder then
 				Folder = FolderGetter(FolderName)
