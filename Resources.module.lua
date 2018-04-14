@@ -22,7 +22,7 @@ local MakeGetterFunction do
 
 	local ServerSide = RunService:IsServer()
 	local ShouldReplicate = ServerSide and not RunService:IsClient()
-	local require, Instance_new = require, Instance.new
+	local Instance_new, type = Instance.new, type
 	local CreateableInstances = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true; Library = false}
 
 	local LocalResourcesLocation, LibraryRepository, GetFolder
@@ -52,20 +52,32 @@ local MakeGetterFunction do
 			end
 
 			Createable = CreateableInstances[InstanceType]
+			Cache = Resources:GetLocalTable(IsLocal and "Local" .. FolderName or FolderName)
 
-			if Createable == nil then -- In order to create a new method, the Folder must already be installed with elements, or the instance must be creatable
-				local GeneratedInstance
+			if Createable == nil then -- This block will never run for most people
+				local GeneratedInstance -- In order to create a new method, the Folder must already be installed with elements, or the instance must be creatable
 				Createable, GeneratedInstance = pcall(Instance_new, InstanceType)
-				local ResourcesLocation = IsLocal and LocalResourcesLocation:FindFirstChild("Resources") or script
 				if Createable and GeneratedInstance then
 					GeneratedInstance:Destroy()
-				elseif not Createable and (not ResourcesLocation or not ResourcesLocation:FindFirstChild(FolderName) or 0 == #ResourcesLocation:FindFirstChild(FolderName):GetChildren()) then
-					warn(("[Resources] %s must be pre-installed inside %s.Resources.%s in order to be fetched by %s")
-						:format(FolderName, ResourcesLocation:GetFullName():gsub("%.Resources$", "", 1), FolderName, MethodName))
+				elseif not Createable then
+					local Warn = true
+					local ResourcesLocation = IsLocal and LocalResourcesLocation:FindFirstChild("Resources") or script
+					Folder = ResourcesLocation and ResourcesLocation:FindFirstChild(FolderName)
+
+					if Folder then -- Cache instances
+						local Children = Folder:GetChildren()
+						for i = 1, #Children do
+							Warn = false -- Make sure there are instances pre-installed in Folder
+							Cache[Children[i].Name] = Children[i]
+						end
+					end
+
+					if Warn then
+						warn(("[Resources] %s must be pre-installed inside %s.Resources.%s in order to be fetched by %s")
+							:format(FolderName, ResourcesLocation:GetFullName():gsub("%.Resources$", "", 1), FolderName, MethodName))
+					end
 				end
 			end
-
-			Cache = Resources:GetLocalTable(IsLocal and "Local" .. FolderName or FolderName)
 		end
 
 		local function GetFunction(this, InstanceName)
@@ -75,7 +87,10 @@ local MakeGetterFunction do
 			if not Folder then
 				Folder = FolderGetter(FolderName)
 				local Children = Folder:GetChildren() -- Cache children of Folder into Table
-				for i = 1, #Children do Cache[Children[i].Name] = Children[i] end
+				for i = 1, #Children do
+					local Child = Children[i]
+					Cache[Child.Name] = Child
+				end
 			end
 
 			local Object = Cache[InstanceName]
@@ -149,6 +164,7 @@ local MakeGetterFunction do
 	if ShouldReplicate and LibraryRepository then LibraryRepository = LibraryRepository:Destroy() end
 end
 
+local require = require
 local LibraryData = Resources:GetLocalTable("LoadedLibraries")
 
 function Resources:LoadLibrary(LibraryName)
