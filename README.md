@@ -15,11 +15,30 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 ```
 
+## For the impatient
+Here is a demonstration of the API:
+```lua
+-- requires a library called `Maid`
+local Maid = Resources:LoadLibrary("Maid") 
+
+-- Gets a RemoteEvent called "Chatted" within Resources.RemoteEvents
+-- On the server, it will generate Folder "RemoteEvents" or RemoteEvent "Chatted" if missing
+-- On the client, it will yield for both
+local ChatEvent = Resources:GetRemoteEvent("Chatted")
+
+
+-- Retrieves a non-replicated table hashed at key "Shared" (which doesn't need to be a string)
+local Shared = Resources:GetLocalTable("Shared")
+```
+
 ## Terminology
 #### Library
 A Library is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) **and its descendants**. In the following image, there are only **two** Libraries; `Keys` and `Rbx_CustomFont`. These two will be accessible through the `LoadLibrary` function and the descendants of `Rbx_CustomFont` will not be (even though `Rbx_CustomFont` will internally `require` them through `require(script.Roboto)`).
 
 ![](https://user-images.githubusercontent.com/15217173/38775144-25b833f0-4038-11e8-9545-952f1634148b.png)
+
+#### Local
+Anything with "Local" in the name refers to a function that does not replicate across the client-server boundary.
 
 ## Functionality and API
 #### LoadLibrary
@@ -148,7 +167,7 @@ local LoadLibraries = Resources:GetLocalTable("LoadedLibraries")
 
 All other hash tables internally used by `Resources` have keys identical to the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) names of the folders within `Resources` or `LOCALSTORAGE`.
 
-```
+```lua
 -- Hash table of all Libraries accessible to this machine (server-only and replicated)
 local LibraryObjects = Resources:GetLocalTable("Libraries")
 -- e.g. {Maid = [ReplicatedStorage.Resources.Libraries.Maid]}
