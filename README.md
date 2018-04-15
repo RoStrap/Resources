@@ -169,7 +169,7 @@ local BindableEvents = Resources:GetLocalTable("LocalBindableEvents")
 ```
 
 #### How to get without instantiating or yielding
-You can use `GetLibrary` if you would like to retrieve a Library without requiring it. However, `GetLibrary` will error on the server if it doesn't find a library, and yield indefinitely on the client. `GetFolder` can thus be used to return a folder object upon which to call `FindFirstChild` if one wants to check whether a library already exists:
+You can use `GetLibrary` if you would like to retrieve a Library without requiring it. However, `GetLibrary` will error on the server if it doesn't find a library (because one cannot do `Instance.new("Library")`), and yield indefinitely on the client. `GetFolder` can thus be used to return a folder object upon which to call `FindFirstChild` if one wants to check whether a library already exists.:
 
 ```lua
 local TweenIsInstalled = Resources:GetFolder("Libraries"):FindFirstChild("Tween")
@@ -178,6 +178,8 @@ if TweenIsInstalled then
   print("Tween is installed in ReplicatedStorage.Resources.Libraries!")
 end
 ```
+
+Obviously this assumes you know the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) will exist. You can also just call `FindFirstChild` on the `Resources` object directly in this case.
 
 Note: `GetLocalFolder` returns `LOCALSTORAGE.Resources.FOLDER_NAME` where `FOLDER_NAME` is the parameter passed. As expected, `GetLocalFolder` will always create folders that do not exist because it is a local function.
 
