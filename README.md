@@ -150,7 +150,7 @@ These functions will not return Folders within `Resources.Folders`, but rather `
 
 If you wanted an array of all Libraries (in Folder `ReplicatedStorage.Resources.Libraries`), you could do the following:
 ```lua
--- This is still a Get function, so it will WaitForChild on the client, and generate on the server if non-existant
+-- Will WaitForChild on the client, and Instance.new on the server if non-existent
 local Libraries = Resources:GetFolder("Libraries"):GetChildren()
 for i = 1, #Libraries do
   print(Libraries[i]:GetFullName())
