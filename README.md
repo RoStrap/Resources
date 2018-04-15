@@ -2,7 +2,7 @@
 [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-manager and library-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to simplify the loading of libraries and unify the networking of resources between the client and server.
 
 ## Set-up
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plug-in, which can installed after clicking the logo [below](https://www.roblox.com/library/725884332/RoStrap):
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plugin, which can installed after clicking the logo [below](https://www.roblox.com/library/725884332/RoStrap):
 
 [![](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)](https://www.roblox.com/library/725884332/RoStrap)
 
@@ -55,14 +55,14 @@ local Maid = Resources:LoadLibrary("Maid")
 -- @returns the result of require(Library)
 ```
 
-If so desired, all methods of `Resources` have hybrid syntax, meaning both method `:` and member `.` syntaxes are supported:
+If so desired, **all** methods of `Resources` have hybrid syntax, meaning both method `:` and member `.` syntaxes are supported:
 
 ```lua
 local require = Resources.LoadLibrary
 local Maid = require("Maid")
 ```
 
-To make a Library **server-only**, give them "Server" in the name or make them a descendant of a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) with "Server" in the name (not case sensitive). This will make the plugin assign the Library with the tag `ServerLibraries`. Libraries moved into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) are tagged with `ReplicatedLibraries`.
+To make a Library **server-only**, give them "Server" in the name or make them a descendant of a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) with "Server" in the name (not case sensitive). This will make the [plugin](https://www.roblox.com/library/725884332/RoStrap) assign the Library with the tag `ServerLibraries`. Libraries moved into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) are tagged with `ReplicatedLibraries`.
 
 Note: Internally, `LoadLibrary` caches and returns `require(Resources:GetLibrary(LibraryName))`
 
@@ -123,7 +123,7 @@ local Attacking = Resources:GetLocalBindableEvent("Attacking")
 -- Each instance not present will always be generated (on whichever computer it runs, it will NOT be replicated)
 ```
 
-This is what this code would do if it was called on the server versus what it would do if it was called on the client:
+Here is what the above code would do if ran by the server versus what it would do if ran by a client:
 ![](https://user-images.githubusercontent.com/15217173/38776022-37e97934-404d-11e8-89c0-cb8b6ab8b511.png)
 
 Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo.
@@ -137,6 +137,14 @@ If you wanted an array of all Libraries (in Folder `ReplicatedStorage.Resources.
 local Libraries = Resources:GetFolder("Libraries"):GetChildren()
 for i = 1, #Libraries do
   print(Libraries[i]:GetFullName())
+end
+
+local TweenIsInstalled = Libraries:FindFirstChild("Tween")
+
+if TweenIsInstalled then
+  print("Tween is installed in ReplicatedStorage.Resources.Libraries!")
+else
+  print("Tween is not installed in ReplicatedStorage.Resources.Libraries! Could it be server-only?")
 end
 
 -- To get LocalLibraries (ServerStorage.Resources.Libraries) on the server:
@@ -195,19 +203,6 @@ local BindableEvents = Resources:GetLocalTable("LocalBindableEvents")
 -- as well as any that get existed when Resources.GetLocalBindableEvents was first indexed
 -- e.g. {Attacked = [LOCALSTORAGE.Resources.BindableEvents.Attacked]}
 ```
-
-#### How to get without instantiating or yielding
-You can use `GetLibrary` if you would like to retrieve a Library without requiring it. However, `GetLibrary` will error on the server if it doesn't find a library (because one cannot do `Instance.new("Library")`), and yield indefinitely on the client. `GetFolder` can thus be used to return a folder object upon which to call `FindFirstChild` if one wants to check whether a library already exists:
-
-```lua
-local TweenIsInstalled = Resources:GetFolder("Libraries"):FindFirstChild("Tween")
-
-if TweenIsInstalled then
-  print("Tween is installed in ReplicatedStorage.Resources.Libraries!")
-end
-```
-
-Obviously this assumes you know the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) will exist. You can also just call `FindFirstChild` on the `Resources` object directly if you can't assume this.
 
 ## Ideas
 #### Map Changer
