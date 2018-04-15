@@ -197,7 +197,7 @@ local BindableEvents = Resources:GetLocalTable("LocalBindableEvents")
 ```
 
 #### How to get without instantiating or yielding
-You can use `GetLibrary` if you would like to retrieve a Library without requiring it. However, `GetLibrary` will error on the server if it doesn't find a library (because one cannot do `Instance.new("Library")`), and yield indefinitely on the client. `GetFolder` can thus be used to return a folder object upon which to call `FindFirstChild` if one wants to check whether a library already exists.:
+You can use `GetLibrary` if you would like to retrieve a Library without requiring it. However, `GetLibrary` will error on the server if it doesn't find a library (because one cannot do `Instance.new("Library")`), and yield indefinitely on the client. `GetFolder` can thus be used to return a folder object upon which to call `FindFirstChild` if one wants to check whether a library already exists:
 
 ```lua
 local TweenIsInstalled = Resources:GetFolder("Libraries"):FindFirstChild("Tween")
@@ -213,6 +213,7 @@ Obviously this assumes you know the [Folder](http://wiki.roblox.com/index.php?ti
 #### Map Changer
 Try using Resources to manage other things like Maps for a game! Make a Folder named "Maps" inside `ServerStorage.Resources` and it can then be accessed!
 ```lua
+-- Server-side
 local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 local Hometown = Resources:GetLocalMap("Hometown v2")
 Hometown.Parent = workspace
@@ -225,6 +226,13 @@ local GunThePlayerJustBought = Resources:GetLocalGun("Ak47")
 -- Make sure the above exists, otherwise, Resources will error trying to do Instance.new("Gun")
 
 GunThePlayerJustBought:Clone().Parent = PlayerBackpackThatBoughtIt
+```
+
+#### UI system
+```lua
+-- Client-side
+local ShopUI = Resources:GetUserInterface("Shop")
+-- Yields for `ReplicatedStorage.Resources.UserInterfaces.Shop`
 ```
 
 ## Contact
