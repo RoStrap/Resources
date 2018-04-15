@@ -129,7 +129,7 @@ This is what this code would do if it was called on the server versus what it wo
 Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo.
 
 #### GetFolder and GetLocalFolder
-These functions will not return Folders within `Resources.Folders`, but rather `Resources` (or `LOCALSTORAGE`).
+These functions will **not** return Folders within `Resources.Folders`, but rather within `Resources` or `LOCALSTORAGE`. `GetFolder` returns `ReplicatedStorage.Resources.FOLDER_NAME` and `GetLocalFolder` returns `LOCALSTORAGE.Resources.FOLDER_NAME` where `FOLDER_NAME` is the parameter passed.
 
 If you wanted an array of all Libraries (in Folder `ReplicatedStorage.Resources.Libraries`), you could do the following:
 ```lua
@@ -150,6 +150,8 @@ local BindableEventsFolder = Resources:GetFolder("BindableEvents")
 ```
 
 ![](https://image.prntscr.com/image/ZonjgCDFQLabru0xbMBUNQ.png)
+
+Note: `GetLocalFolder` will always create folders if they do not already exist because it is a local function.
 
 ## GetLocalTable
 The `GetLocalTable` function returns a (non-replicated) table hashed within `Resources` under the key passed in as a parameter. This is a convienent way to avoid Libraries that are simply `return {}`
@@ -206,8 +208,6 @@ end
 ```
 
 Obviously this assumes you know the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) will exist. You can also just call `FindFirstChild` on the `Resources` object directly if you can't assume this.
-
-Note: `GetLocalFolder` returns `LOCALSTORAGE.Resources.FOLDER_NAME` where `FOLDER_NAME` is the parameter passed. As expected, `GetLocalFolder` will always create folders if they do not already exist because it is a local function.
 
 ## Ideas
 #### Map Changer
