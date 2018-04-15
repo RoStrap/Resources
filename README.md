@@ -6,7 +6,7 @@
 
 [![](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)](https://www.roblox.com/library/725884332/RoStrap)
 
-After installing, you should have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in either [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService). This `Repository` is where all of your Libraries will reside.
+After installing, you should have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in either [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService). This `Repository` is where all of your Libraries will reside. Only Folders and ModuleScripts (and their children) should go in this `Repository`.
 
 ## Initialization
 To start using the module, simply `require` it.
