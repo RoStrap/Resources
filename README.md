@@ -79,6 +79,8 @@ local Chatted = Resources:GetRemoteEvent("Chatted")
 local ClientLoaded = Resources:GetRemoteFunction("ClientLoaded")
 ```
 
+![](https://user-images.githubusercontent.com/15217173/38775951-d6bfbeee-404b-11e8-8396-9666a0b20b98.png)
+
 Any instance type is compatible with `Resources`:
 
 ```lua
@@ -97,6 +99,8 @@ local Falchion = Resources:GetSword("Falchion")
 -- It will then add "s" to "Sword" and thus expect the Folder to be named "Swords".
 -- Library (and Accessory, and any type ending in 'y') will be in Folder "Librar" .. ies"
 ```
+
+![](https://user-images.githubusercontent.com/15217173/38775984-64af0b2e-404c-11e8-9279-0adace656665.png)
 
 #### GetLocal Functions
 If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, `LOCALSTORAGE` is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, `LOCALSTORAGE` is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Resources stores goes into folders named `Resources`.
@@ -118,6 +122,9 @@ local Attacking = Resources:GetLocalBindableEvent("Attacking")
 
 -- Each instance not present will always be generated (on whichever computer it runs, it will NOT be replicated)
 ```
+
+This is what this code would do if it was called on the server versus what it would do if it was called on the client:
+![](https://user-images.githubusercontent.com/15217173/38776022-37e97934-404d-11e8-89c0-cb8b6ab8b511.png)
 
 Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo.
 
