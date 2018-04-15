@@ -205,9 +205,9 @@ if TweenIsInstalled then
 end
 ```
 
-Obviously this assumes you know the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) will exist. You can also just call `FindFirstChild` on the `Resources` object directly in this case.
+Obviously this assumes you know the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) will exist. You can also just call `FindFirstChild` on the `Resources` object directly if you can't assume this.
 
-Note: `GetLocalFolder` returns `LOCALSTORAGE.Resources.FOLDER_NAME` where `FOLDER_NAME` is the parameter passed. As expected, `GetLocalFolder` will always create folders that do not exist because it is a local function.
+Note: `GetLocalFolder` returns `LOCALSTORAGE.Resources.FOLDER_NAME` where `FOLDER_NAME` is the parameter passed. As expected, `GetLocalFolder` will always create folders if they do not already exist because it is a local function.
 
 ## Ideas
 #### Map Changer
