@@ -120,9 +120,8 @@ local MakeGetterFunction do
 	GetLocalFolder = MakeGetterFunction(Resources, "GetLocalFolder")
 
 	if not ServerSide then
-		repeat LocalResourcesLocation = game:GetService("Players").LocalPlayer until LocalResourcesLocation or not wait()
-		repeat until LocalResourcesLocation:FindFirstChildOfClass("PlayerScripts") or not wait()
-		LocalResourcesLocation = LocalResourcesLocation:FindFirstChildOfClass("PlayerScripts")
+		local LocalPlayer repeat LocalPlayer = game:GetService("Players").LocalPlayer until LocalPlayer or not wait()
+		repeat LocalResourcesLocation = LocalPlayer:FindFirstChildOfClass("PlayerScripts") until LocalResourcesLocation or not wait()
 	else
 		LocalResourcesLocation = game:GetService("ServerStorage")
 		LibraryRepository = LocalResourcesLocation:FindFirstChild("Repository") or game:GetService("ServerScriptService"):FindFirstChild("Repository")
