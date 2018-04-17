@@ -100,7 +100,7 @@ local MakeGetterFunction do
 					or Folder:WaitForChild(InstanceName)) or Folder:FindFirstChild(InstanceName)
 
 				if not Object then
-					if not Createable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed.", 2) end
+					if not Createable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed within " .. Folder:GetFullName(), 2) end
 					Object = Instance_new(InstanceType)
 					Object.Name = InstanceName
 					Object.Parent = Folder
