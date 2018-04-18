@@ -23,24 +23,22 @@ local MakeGetterFunction do
 	local ServerSide = RunService:IsServer()
 	local ShouldReplicate = ServerSide and not RunService:IsClient()
 	local Instance_new, type = Instance.new, type
-	local CreateableInstances = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true; Library = false}
+	local InstantiableInstances = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true; Library = false}
 
 	local LocalResourcesLocation, LibraryRepository
 
-	local function GetFolder() -- Temporary, gets overwritten
-		return script
-	end
-
+	local function GetFolder() return script end
 	local function GetLocalFolder() -- Temporary GetLocalFolder function; this will get overwritten
-		local Folder = LocalResourcesLocation:FindFirstChild("Resources") or Instance_new("Folder", LocalResourcesLocation)
+		local Folder = LocalResourcesLocation:FindFirstChild("Resources") or Instance_new("Folder")
 		Folder.Name = "Resources"
+		Folder.Parent = LocalResourcesLocation
 		return Folder
 	end
 
 	function MakeGetterFunction(self, MethodName, Folder)
 		if type(MethodName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(MethodName), 2) end
 
-		local IsLocal, InstanceType, FolderGetter, FolderName, Createable, CacheName, Cache do -- Get Function Constants
+		local IsLocal, InstanceType, FolderGetter, FolderName, Instantiable, CacheName, Cache do -- Get Function Constants
 			InstanceType, IsLocal = MethodName:gsub("^Get", "", 1)
 			if IsLocal == 0 then error("[Resources] Methods should begin with \"Get\"", 2) end -- Make sure methods begin with "Get"
 
@@ -55,14 +53,14 @@ local MakeGetterFunction do
 				FolderName = InstanceType .. "s" -- Set FolderName to ["RemoteEvent" .. "s"], or ["Librar" .. "ies"]
 			end
 
-			Createable = CreateableInstances[InstanceType]
+			Instantiable = InstantiableInstances[InstanceType]
 			CacheName = IsLocal and "Local" .. FolderName or FolderName
 			if Folder then
 				Cache = Caches[CacheName]
-			elseif Createable == nil then -- This block will never run for most people
+			elseif Instantiable == nil then -- This block will never run for most people
 				local GeneratedInstance
-				Createable, GeneratedInstance = pcall(Instance_new, InstanceType)
-				if Createable and GeneratedInstance then GeneratedInstance:Destroy() end
+				Instantiable, GeneratedInstance = pcall(Instance_new, InstanceType)
+				if Instantiable and GeneratedInstance then GeneratedInstance:Destroy() end
 			end
 		end
 
@@ -94,7 +92,7 @@ local MakeGetterFunction do
 					or Folder:WaitForChild(InstanceName)) or Folder:FindFirstChild(InstanceName)
 
 				if not Object then
-					if not Createable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed within " .. Folder:GetFullName() .. ".", 2) end
+					if not Instantiable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed within " .. Folder:GetFullName() .. ".", 2) end
 					Object = Instance_new(InstanceType)
 					Object.Name = InstanceName
 					Object.Parent = Folder
