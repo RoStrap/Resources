@@ -18,8 +18,8 @@ local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 ## For the impatient
 Here is a demonstration of the API:
 ```lua
--- requires a library called `Maid`
-local Maid = Resources:LoadLibrary("Maid") 
+-- requires a library by string "Maid"
+local Maid = Resources:LoadLibrary("Maid")
 
 -- Gets a RemoteEvent called "Chatted" within Resources.RemoteEvents
 -- On the server, it will generate Folder "RemoteEvents" or RemoteEvent "Chatted" if missing
@@ -30,6 +30,8 @@ local ChatEvent = Resources:GetRemoteEvent("Chatted")
 -- Retrieves a non-replicated table hashed at key "Shared" (which doesn't need to be a string)
 local Shared = Resources:GetLocalTable("Shared")
 ```
+
+The main purposes of `Resources` are to unify the API for fetching RemoteEvents and standardize the API for requiring [ModuleScripts](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript).
 
 ## Terminology
 #### Library
@@ -103,12 +105,12 @@ local Falchion = Resources:GetSword("Falchion")
 ![](https://user-images.githubusercontent.com/15217173/38775984-64af0b2e-404c-11e8-9279-0adace656665.png)
 
 #### GetLocal Functions
-If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, `LOCALSTORAGE` is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, `LOCALSTORAGE` is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Resources stores goes into folders named `Resources`.
+If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, `LOCALSTORAGE` is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, `LOCALSTORAGE` is located in [LocalPlayer.PlayerScripts](http://wiki.roblox.com/index.php?title=API:Class/PlayerScripts). Everything Resources stores goes into folders named `Resources`.
 
 |LocalStorage|**Location**|
 |:-----:|:----:|
 |Server|ServerStorage.Resources|
-|Client|Players.LocalPlayer.Resources|
+|Client|Players.LocalPlayer.PlayerScripts.Resources|
 
 Any computer (either client or server) can instantiate instances on local storage.
 
@@ -116,7 +118,7 @@ Any computer (either client or server) can instantiate instances on local storag
 local Attacking = Resources:GetLocalBindableEvent("Attacking")
 -- Finds LOCALSTORAGE.Resources.BindableEvents.Attacking and creates if missing
 
--- where LOCALSTORAGE is LocalPlayer on the client and ServerStorage on the Server,
+-- where LOCALSTORAGE is PlayerScripts on the client and ServerStorage on the Server,
 -- where "Resources" and "BindableEvents" are Folder Objects,
 -- and "Attacking" is a BindableEvent Object
 

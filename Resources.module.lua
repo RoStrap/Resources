@@ -25,7 +25,11 @@ local MakeGetterFunction do
 	local Instance_new, type = Instance.new, type
 	local CreateableInstances = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true; Library = false}
 
-	local LocalResourcesLocation, LibraryRepository, GetFolder
+	local LocalResourcesLocation, LibraryRepository
+
+	local function GetFolder() -- Temporary, gets overwritten
+		return script
+	end
 
 	local function GetLocalFolder() -- Temporary GetLocalFolder function; this will get overwritten
 		local Folder = LocalResourcesLocation:FindFirstChild("Resources") or Instance_new("Folder", LocalResourcesLocation)
@@ -36,7 +40,7 @@ local MakeGetterFunction do
 	function MakeGetterFunction(self, MethodName, Folder)
 		if type(MethodName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(MethodName), 2) end
 
-		local IsLocal, InstanceType, FolderGetter, FolderName, Createable, Cache do -- Get Function Constants
+		local IsLocal, InstanceType, FolderGetter, FolderName, Createable, CacheName, Cache do -- Get Function Constants
 			InstanceType, IsLocal = MethodName:gsub("^Get", "", 1)
 			if IsLocal == 0 then error("[Resources] Methods should begin with \"Get\"", 2) end -- Make sure methods begin with "Get"
 
@@ -52,31 +56,13 @@ local MakeGetterFunction do
 			end
 
 			Createable = CreateableInstances[InstanceType]
-			Cache = Resources:GetLocalTable(IsLocal and "Local" .. FolderName or FolderName)
-
-			if Createable == nil then -- This block will never run for most people
-				local GeneratedInstance -- In order to create a new method, the Folder must already be installed with elements, or the instance must be creatable
+			CacheName = IsLocal and "Local" .. FolderName or FolderName
+			if Folder then
+				Cache = Caches[CacheName]
+			elseif Createable == nil then -- This block will never run for most people
+				local GeneratedInstance
 				Createable, GeneratedInstance = pcall(Instance_new, InstanceType)
-				if Createable and GeneratedInstance then
-					GeneratedInstance:Destroy()
-				elseif not Createable then
-					local Warn = true
-					local ResourcesLocation = IsLocal and LocalResourcesLocation:FindFirstChild("Resources") or script
-					Folder = ResourcesLocation and ResourcesLocation:FindFirstChild(FolderName)
-
-					if Folder then -- Cache instances
-						local Children = Folder:GetChildren()
-						for i = 1, #Children do
-							Warn = false -- Make sure there are instances pre-installed in Folder
-							Cache[Children[i].Name] = Children[i]
-						end
-					end
-
-					if Warn then
-						warn("[Resources]", FolderName, ("must be pre-installed inside %s.Resources.%s in order to be fetched by")
-							:format(ResourcesLocation:GetFullName():gsub("%.Resources$", "", 1), FolderName), MethodName)
-					end
-				end
+				if Createable and GeneratedInstance then GeneratedInstance:Destroy() end
 			end
 		end
 
@@ -85,11 +71,19 @@ local MakeGetterFunction do
 			if type(InstanceName) ~= "string" then error("[Resources] " .. MethodName .. " expected a string parameter, got " .. typeof(InstanceName), 2) end
 
 			if not Folder then
+				Cache = Caches[CacheName]
 				Folder = FolderGetter(FolderName)
 				local Children = Folder:GetChildren() -- Cache children of Folder into Table
+
+				if not Cache then
+					Cache = Children -- Recycling is good!
+					Caches[CacheName] = Children
+				end
+
 				for i = 1, #Children do
 					local Child = Children[i]
 					Cache[Child.Name] = Child
+					Children[i] = nil
 				end
 			end
 
@@ -100,7 +94,7 @@ local MakeGetterFunction do
 					or Folder:WaitForChild(InstanceName)) or Folder:FindFirstChild(InstanceName)
 
 				if not Object then
-					if not Createable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed.", 2) end
+					if not Createable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed within " .. Folder:GetFullName() .. ".", 2) end
 					Object = Instance_new(InstanceType)
 					Object.Name = InstanceName
 					Object.Parent = Folder
@@ -116,7 +110,7 @@ local MakeGetterFunction do
 		return GetFunction
 	end
 
-	GetFolder = MakeGetterFunction(Resources, "GetFolder", script)
+	GetFolder = MakeGetterFunction(Resources, "GetFolder")
 	GetLocalFolder = MakeGetterFunction(Resources, "GetLocalFolder")
 
 	if not ServerSide then
@@ -125,13 +119,22 @@ local MakeGetterFunction do
 	else
 		LocalResourcesLocation = game:GetService("ServerStorage")
 		LibraryRepository = LocalResourcesLocation:FindFirstChild("Repository") or game:GetService("ServerScriptService"):FindFirstChild("Repository")
-		local Libraries = Resources:GetLocalTable("Libraries")
+		local Libraries
 
 		for a = 1, 2 do
 			local Modules = CollectionService:GetTagged(a == 1 and "ReplicatedLibraries" or "ServerLibraries") -- Assemble `Libraries` table
 			local ModuleCount = #Modules
 			if ModuleCount > 0 then
 				local Repository = ShouldReplicate and (a == 1 and GetFolder or GetLocalFolder)("Libraries")
+				if not Libraries then
+					Libraries = Modules
+					Caches.Libraries = Modules
+
+					if a == 1 and ShouldReplicate then
+						MakeGetterFunction(Resources, "GetLibrary", Repository) -- Make it so the Server doesn't parse Resources.Libraries:GetChildren(), which is redundant
+					end
+				end
+
 				for i = 1, ModuleCount do
 					local Library = Modules[i]
 					if ShouldReplicate then
@@ -141,9 +144,7 @@ local MakeGetterFunction do
 						error("[Resources] Duplicate Libraries named \"" .. Library.Name .. "\". Overshadowing is only permitted when a ServerLibrary overshadows a ReplicatedLibrary", 0) or
 						ServerSide and not ShouldReplicate and warn("[Resources] In the absence of a client, the client-version of", Library.Name, "will be inaccessible."))
 						or Library
-				end
-				if a == 1 and Repository then
-					MakeGetterFunction(Resources, "GetLibrary", Repository) -- Make it so the Server doesn't parse Resources.Libraries:GetChildren(), which is redundant
+					Modules[i] = nil
 				end
 			end
 		end
@@ -167,15 +168,16 @@ local MakeGetterFunction do
 end
 
 local require = require
-local LibraryData = Resources:GetLocalTable("LoadedLibraries")
+local LoadedLibraries = {}
+Caches.LoadedLibraries = LoadedLibraries
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
-	local Data = LibraryData[LibraryName]
+	local Data = LoadedLibraries[LibraryName]
 
 	if Data == nil then
 		Data = require(Resources:GetLibrary(LibraryName))
-		LibraryData[LibraryName] = Data
+		LoadedLibraries[LibraryName] = Data
 	end
 
 	return Data
