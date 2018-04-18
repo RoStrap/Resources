@@ -1,192 +1,204 @@
 # Resources
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-manager and library-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to simplify the loading of libraries and unify the networking of resources between the client and server.
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-manager and library-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to streamline the loading of libraries and standardize the API for networking instances between the client and server.
 
 ## Set-up
 [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plugin, which can installed after clicking the logo [below](https://www.roblox.com/library/725884332/RoStrap):
 
 [![](https://avatars1.githubusercontent.com/u/22812966?v=4&s=100)](https://www.roblox.com/library/725884332/RoStrap)
 
-After installing, you should have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) called `Repository` in either [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService). This `Repository` is where all of your Libraries will reside. Only Folders and ModuleScripts (and their children) should go in this `Repository`.
+After installing, you should have a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) named "Repository" in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage) (or [ServerScriptService](http://wiki.roblox.com/index.php?title=API:Class/ServerScriptService)). This `Repository` is where all of your [Libraries](https://github.com/RoStrap/Resources#library) will reside. *Only* [Folders](http://wiki.roblox.com/index.php?title=API:Class/Folder) and [Libraries](https://github.com/RoStrap/Resources#library) should go in this `Repository`.
 
 ## Initialization
-To start using the module, simply `require` it.
+To start using the module, simply [require](http://wiki.roblox.com/index.php?title=Global_namespace/Roblox_namespace#require) it. This is the standard way of requiring `Resources`:
+
 ```lua
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Resources = require(ReplicatedStorage:WaitForChild("Resources"))
 ```
 
-## For the impatient
-Here is a demonstration of the API:
+## Demonstration
+Here's a quick look at the API:
 ```lua
--- requires a library called `Maid`
-local Maid = Resources:LoadLibrary("Maid") 
+local Maid = Resources:LoadLibrary("Maid") -- requires a library by string
 
--- Gets a RemoteEvent called "Chatted" within Resources.RemoteEvents
--- On the server, it will generate Folder "RemoteEvents" or RemoteEvent "Chatted" if missing
--- On the client, it will yield for both
 local ChatEvent = Resources:GetRemoteEvent("Chatted")
+-- Gets RemoteEvent Resources.RemoteEvents.Chatted
+-- On the server, it will generate Folder "RemoteEvents" and/or RemoteEvent "Chatted" if missing
+-- On the client, it will yield until Resources.RemoteEvents.Chatted exists
 
-
--- Retrieves a non-replicated table hashed at key "Shared" (which doesn't need to be a string)
 local Shared = Resources:GetLocalTable("Shared")
+-- Retrieves a (non-replicated) table hashed at key "Shared" (keys don't need to be strings)
 ```
 
 ## Terminology
-#### Library
-A Library is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) **and its descendants**. In the following image, there are only **two** Libraries; `Keys` and `Rbx_CustomFont`. These two will be accessible through the `LoadLibrary` function and the descendants of `Rbx_CustomFont` will not be (even though `Rbx_CustomFont` will internally `require` them through `require(script.Roboto)`).
+### Library
+A *Library* is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) **and its descendants**. In the following image, there are only **two** Libraries; `Keys` and `Rbx_CustomFont`. These two will be accessible through the `LoadLibrary` function and **their descendants will not be**, though parent Libraries may internally utilize children through, for example, `require(script.Roboto)`.
 
 ![](https://user-images.githubusercontent.com/15217173/38775144-25b833f0-4038-11e8-9545-952f1634148b.png)
 
-#### Local
-Anything with "Local" in the name refers to a function that does not replicate across the client-server boundary.
+### Local
+*Local* in a function-name refers to **a function that does not replicate** across the client-server boundary.
 
-## Functionality and API
-#### LoadLibrary
-When the server first requires `Resources`, it will move the Libraries within `Repository` to [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) (under `Resources.Libraries`), where both the client and server can require them via the function `LoadLibrary`. Notice how folder heiarchy is ignored.
+## API
+All functions within `Resources` take in parameter `string Name`.
+
+### LoadLibrary
+When the server [requires](http://wiki.roblox.com/index.php?title=Global_namespace/Roblox_namespace#require) `Resources` for the first time, it will move the [Libraries](https://github.com/RoStrap/Resources#library) within `ServerStorage.Repository` to `ReplicatedStorage.Resources.Libraries`, where both the client and server can [require](http://wiki.roblox.com/index.php?title=Global_namespace/Roblox_namespace#require) them via the function `LoadLibrary`. Notice how folder heiarchy is ignored.
 
 ![](https://image.prntscr.com/image/ZonjgCDFQLabru0xbMBUNQ.png)
 
-`LoadLibrary` is a require-by-string function which caches the results, so a Library only has `require` called on it once. To `require` the `Maid` Library (assuming it is installed), we could do the following:
+`LoadLibrary` is a require-by-string function which caches the results, so any given [Library](https://github.com/RoStrap/Resources#library) only has [require](http://wiki.roblox.com/index.php?title=Global_namespace/Roblox_namespace#require) called on it once ([require](http://wiki.roblox.com/index.php?title=Global_namespace/Roblox_namespace#require) is an [idempotent function](https://en.wikipedia.org/wiki/Idempotence#Computer_science_meaning)). To [require](http://wiki.roblox.com/index.php?title=Global_namespace/Roblox_namespace#require) the [Library](https://github.com/RoStrap/Resources#library) `Maid`, we could do the following:
 
 ```lua
 local Maid = Resources:LoadLibrary("Maid")
--- Requires Library with name "Maid"
+-- Requires Library called "Maid"
+-- If it has previously been required, simply returns previous result
 -- @param string LibraryName The name of the library you wish to require
 -- @returns the result of require(Library)
 ```
 
-If so desired, **all** methods of `Resources` have hybrid syntax, meaning both method `:` and member `.` syntaxes are supported:
+If so desired, **all** methods of `Resources` have *hybrid syntax*, meaning both method `:` and member `.` syntaxes are supported:
 
 ```lua
 local require = Resources.LoadLibrary
 local Maid = require("Maid")
 ```
 
-To make a Library **server-only**, give them "Server" in the name or make them a descendant of a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) with "Server" in the name (not case sensitive). This will make the [plugin](https://www.roblox.com/library/725884332/RoStrap) assign the Library with the tag `ServerLibraries`. Libraries moved into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) are tagged with `ReplicatedLibraries`.
+To make a [Library](https://github.com/RoStrap/Resources#library) **server-only**, give them "Server" in the [Name](http://wiki.roblox.com/index.php?title=API:Class/Instance/Name) or make them a descendant of a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) with "Server" in the [Name](http://wiki.roblox.com/index.php?title=API:Class/Instance/Name) (not case-sensitive). This will make the [plugin](https://www.roblox.com/library/725884332/RoStrap) assign the **server-only** [Library](https://github.com/RoStrap/Resources#library) with the tag `ServerLibraries`. Conversely, [Libraries](https://github.com/RoStrap/Resources#library) moved into [ReplicatedStorage](http://wiki.roblox.com/index.php?title=API:Class/ReplicatedStorage) at run-time are tagged with the tag `ReplicatedLibraries`.
 
-Note: Internally, `LoadLibrary` caches and returns `require(Resources:GetLibrary(LibraryName))`. `GetLibrary` is the only function that can retrieve objects from both `ServerStorage` and `ReplicatedStorage`. `GetLocalLibrary` is technically valid, but unnecessary.
+###### Note: Internally, `LoadLibrary` caches and returns `require(Resources:GetLibrary(LibraryName))`. `GetLibrary` is the only function that can retrieve objects from both `ServerStorage` and `ReplicatedStorage`. This is because libraries tagged with `ServerLibraries` are added directly to its cache (server-side only). `GetLocalLibrary` is technically a valid function, but unnecessary.
 
-## Procedurally Generated Get Functions
-Functions can be procedurally generated by `Resources`, in the form of `GetCLASSNAME` with string parameter `Name`. These functions return an instance under `ReplicatedStorage.Resources.CLASSNAMES`. **On the server, missing instances will be generated via [Instance.new](http://wiki.roblox.com/index.php?title=Instance_(Data_Structure)). On the client, the function will yield for the missing instances via [WaitForChild](http://wiki.roblox.com/index.php?title=API:Class/Instance/WaitForChild).**
+## Get Functions
+Get Functions do a [hash-table](https://image.slidesharecdn.com/thebasicsanddesignofluatable-170213091607/95/the-basics-and-design-of-lua-table-8-638.jpg?cb=1486977682) lookup for the [Instance](http://wiki.roblox.com/index.php?title=API:Class/Instance) they are searching for. If this fails, the [Instance](http://wiki.roblox.com/index.php?title=API:Class/Instance) will be searched for via [FindFirstChild](http://wiki.roblox.com/index.php?title=API:Class/Instance/FindFirstChild).
+
+**On the server, missing instances will be instantiated via [Instance.new](http://wiki.roblox.com/index.php?title=Instance_(Data_Structure)). On the client, the function will yield for the missing instances via [WaitForChild](http://wiki.roblox.com/index.php?title=API:Class/Instance/WaitForChild). This is true for all (non-Local) Get Functions.**
+
+The object, once retrieved, will be cached in the aforementioned [hash-table](https://image.slidesharecdn.com/thebasicsanddesignofluatable-170213091607/95/the-basics-and-design-of-lua-table-8-638.jpg?cb=1486977682) for future calls and returned.
+
+### GetFolder
+`GetFolder` is the basis of all other functions within `Resources` (with the exception of [GetLocalTable](https://github.com/RoStrap/Resources#getlocaltable)). `GetFolder` returns a [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) inside of `ReplicatedStorage.Resources`.
+
+```lua
+-- Folder Resources.Libraries
+local Libraries = Resources:GetFolder("Libraries")
+
+-- Folder Resources.BindableEvents
+local BindableEvents = Resources:GetFolder("BindableEvents")
+```
+
+### Procedurally Generated Get Functions
+Functions can be procedurally generated by `Resources`, in the form of `GetCLASSNAME` with string parameter [Name](http://wiki.roblox.com/index.php?title=API:Class/Instance/Name). These functions return an [Instance](http://wiki.roblox.com/index.php?title=API:Class/Instance) under `Resources:GetFolder(CLASSNAME:gsub("y$", "ie") .. "s")`.
 
 ```lua
 local Chatted = Resources:GetRemoteEvent("Chatted")
--- Searches for ReplicatedStorage.Resources.RemoteEvents.Chatted
--- If the Folder `RemoteEvents` or the RemoteEvent `Chatted` do not exist then:
---    on the server, they will be generated
---    on the client, the function will yield until they have been replicated
+-- Gets "Chatted" within Folder Resources:GetFolder("RemoteEvent" .. "s")
+-- AKA ReplicatedStorage.Resources.RemoteEvents.Chatted
 
-local ClientLoaded = Resources:GetRemoteFunction("ClientLoaded")
+-- If either the Folder `RemoteEvents` or the RemoteEvent `Chatted` do not exist then:
+--    on the server, they will be generated (Instance.new)
+--    on the client, the thread will yield until they have been replicated (WaitForChild)
 ```
+
+|GetRemoteEvent("Chatted")|⇨|GetFolder("RemoteEvents")|⇨|`ROOT`|
+|:-----:|:-----:|:-----:|:-----:|:-----:|
+|RemoteEvent `Chatted` in|**⇨**|Folder `RemoteEvents` in|**⇨**|`ReplicatedStorage.Resources`|
 
 ![](https://user-images.githubusercontent.com/15217173/38775951-d6bfbeee-404b-11e8-8396-9666a0b20b98.png)
 
-Any instance type is compatible with `Resources`:
+[Any Instance type](http://wiki.roblox.com/index.php?title=API:Class/Instance#Inherited_Classes) is compatible with `Resources`:
 
 ```lua
--- Not sure why you would need to, but this retrieves a TextLabel
--- called "Superman" inside ReplicatedStorage.Resources.TextLabels
-local Superman = Resources:GetTextLabel("Superman")
+local ClientLoaded = Resources:GetRemoteFunction("ClientLoaded")
 ```
 
-In fact, `Resources` can also manage instance types that aren't creatable by `Instance.new`. They must however, be preinstalled into `Replicated.Resources`. This allows you to do things like the following:
+In fact, `Resources` can also manage instance types that aren't instantiable by `Instance.new`. However, these **instances must be preinstalled in the locations in which they would otherwise be instantiated and will not be generated at run-time**. This allows you to do things like the following:
+
+|```local Falchion = Resources:GetSword("Falchion")```|
+|:-----:|
+|![](https://user-images.githubusercontent.com/15217173/38775984-64af0b2e-404c-11e8-9279-0adace656665.png)|
+
+### GetLocalTable
+`GetLocalTable` returns a (non-replicated) [table](http://wiki.roblox.com/index.php?title=Table) hashed at the key which is passed in as a parameter. This is the only `Get` function that does not deal with [Instances](http://wiki.roblox.com/index.php?title=API:Class/Instance). This is a convienent way to avoid having [Libraries](https://github.com/RoStrap/Resources#library) that simply `return {}`
 
 ```lua
-local Falchion = Resources:GetSword("Falchion")
--- As long as there exists a Resources.Swords.Falchion, it will be retrieved
+local Shared = Resources:GetLocalTable("Shared") -- returns a table
 
--- The function generator will remove "^Get" from "GetSword"
--- It will then add "s" to "Sword" and thus expect the Folder to be named "Swords".
--- Library (and Accessory, and any type ending in 'y') will be in Folder "Librar" .. ies"
+-- In another script
+local Shared = Resources:GetLocalTable("Shared") -- same table (if on the same machine)
+local Shared2 = Resources:GetLocalTable("Shared2") -- different table
+
+-- The keys don't have to be strings
+local PlayerData = Resources:GetLocalTable(6)
 ```
 
-![](https://user-images.githubusercontent.com/15217173/38775984-64af0b2e-404c-11e8-9279-0adace656665.png)
+## Local Functions
+If you want to access `LOCALSTORAGE`, you can call a function of the form `GetLocalCLASSNAME` to generate a [Local function](https://github.com/RoStrap/Resources#local). On the server, `LOCALSTORAGE` is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, `LOCALSTORAGE` is located in [LocalPlayer.PlayerScripts](http://wiki.roblox.com/index.php?title=API:Class/PlayerScripts). All [Instances](http://wiki.roblox.com/index.php?title=API:Class/Instance) managed by `Resources` are stored in [Folders](http://wiki.roblox.com/index.php?title=API:Class/Folder) named "Resources".
 
-#### GetLocal Functions
-If you want to access local storage (not replicated across the client-server model), you can add `Local` before `CLASSNAME` to access it. On the server, `LOCALSTORAGE` is located in [ServerStorage](http://wiki.roblox.com/index.php?title=API:Class/ServerStorage). On the client, `LOCALSTORAGE` is located in [LocalPlayer](http://wiki.roblox.com/index.php?title=API:Class/Players/LocalPlayer). Everything Resources stores goes into folders named `Resources`.
+|Machine|`LOCALSTORAGE`|`LOCALRESOURCES`|
+|:-----:|:----:|:----:|
+|Server|`ServerStorage`|`ServerStorage.Resources`|
+|Client|`Players.LocalPlayer.PlayerScripts`|`Players.LocalPlayer.PlayerScripts.Resources`|
 
-|LocalStorage|**Location**|
-|:-----:|:----:|
-|Server|ServerStorage.Resources|
-|Client|Players.LocalPlayer.Resources|
-
-Any computer (either client or server) can instantiate instances on local storage.
+**Both the server and clients can instantiate instances in their `LOCALSTORAGE` via Instance.new** (including the `LOCALRESOURCES` folders in the table above). No yielding involved.
 
 ```lua
 local Attacking = Resources:GetLocalBindableEvent("Attacking")
 -- Finds LOCALSTORAGE.Resources.BindableEvents.Attacking and creates if missing
 
--- where LOCALSTORAGE is LocalPlayer on the client and ServerStorage on the Server,
+-- where LOCALSTORAGE is PlayerScripts on the client and ServerStorage on the Server,
 -- where "Resources" and "BindableEvents" are Folder Objects,
 -- and "Attacking" is a BindableEvent Object
 
--- Each instance not present will always be generated (on whichever computer it runs, it will NOT be replicated)
+-- Each instance not present will always be generated (on whichever machine it runs, it will NOT be replicated)
 ```
+|GetLocalBindableEvent("Attacking")|⇨|GetLocalFolder("BindableEvents")|⇨|Get `LOCALRESOURCES`|⇨|`ROOT`|
+|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+|BindableEvent `Attacking` in|**⇨**|Folder `BindableEvents` in|**⇨**|Folder `Resources` in|**⇨**|**`LOCALSTORAGE`**|
 
 Here is what the above code would do if ran by the server versus what it would do if ran by a client:
-![](https://user-images.githubusercontent.com/15217173/38776022-37e97934-404d-11e8-89c0-cb8b6ab8b511.png)
 
-Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo.
+|Server|Client|
+|:----:|:----:|
+|![](https://user-images.githubusercontent.com/15217173/38918583-6a9dcf50-42ab-11e8-8dbd-a165595af63f.png)|![](https://user-images.githubusercontent.com/15217173/38918817-00857d1a-42ac-11e8-9a3e-3176a2cb65b0.png)|
 
-#### GetFolder and GetLocalFolder
-These functions will **not** return Folders within `Resources.Folders`, but rather within `Resources` or `LOCALSTORAGE`. `GetFolder` returns `ReplicatedStorage.Resources.FOLDER_NAME` and `GetLocalFolder` returns `LOCALSTORAGE.Resources.FOLDER_NAME` where `FOLDER_NAME` is the parameter passed.
+###### Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo. `LOCALSTORAGE` is typically just for `GetLocalBindableEvent` calls and having a place to store server-only Libraries, which are under `GetLocalFolder("Resources")`
 
-If you wanted an array of all Libraries (in Folder `ReplicatedStorage.Resources.Libraries`), you could do the following:
+## Internals
+The GetFunction generator practically looks like this (but is more efficient and expandable):
+
 ```lua
--- Will WaitForChild on the client, and Instance.new on the server if non-existent
-local Libraries = Resources:GetFolder("Libraries"):GetChildren()
-for i = 1, #Libraries do
-  print(Libraries[i]:GetFullName())
+-- Given function GetChild which instantiates on the server and yields on the client if Object isn't found
+-- Given function PlaceInCache(table Cache, RbxObject Object) which sets: Cache[Object.Name] = Object
+-- Given string CLASSNAME from method Resources:GetCLASSNAME()
+
+local FolderName = CLASSNAME:gsub("[^aeiou]y$", "ie") .. "s"
+
+local Cache = Resources:GetLocalTable(FolderName)
+local Folder = Resources:GetFolder(FolderName)
+
+return function(Name)
+	return Cache[Name] or PlaceInCache(Cache, GetChild(Folder, Name))
 end
-
-local TweenIsInstalled = Libraries:FindFirstChild("Tween")
-
-if TweenIsInstalled then
-  print("Tween is installed in ReplicatedStorage.Resources.Libraries!")
-else
-  print("Tween is not installed in ReplicatedStorage.Resources.Libraries! Could it be server-only?")
-end
-
--- To get LocalLibraries (ServerStorage.Resources.Libraries) on the server:
-local LocalLibraries = Resources:GetLocalFolder("Libraries"):GetChildren()
-for i = 1, #LocalLibraries do
-  print(LocalLibraries[i]:GetFullName())
-end
-
--- To get ReplicatedStorage.Resources.BindableEvents, internally used by GetBindableEvent()
-local BindableEventsFolder = Resources:GetFolder("BindableEvents")
 ```
 
-![](https://image.prntscr.com/image/ZonjgCDFQLabru0xbMBUNQ.png)
+###### Note: Internally, `GetFolder` is generated and runs on the same code as functions like `GetRemoteEvent` or `GetLibrary` (the latter of which is generated by a call to `LoadLibrary`)
 
-Note: `GetLocalFolder` will always create folders if they do not already exist because it is a local function.
-
-## GetLocalTable
-The `GetLocalTable` function returns a (non-replicated) table hashed within `Resources` under the key passed in as a parameter. This is a convienent way to avoid Libraries that are simply `return {}`
-```lua
-local Shared = Resources:GetLocalTable("Shared") -- returns a table
-
--- In another script
-local Shared = Resources:GetLocalTable("Shared") -- same table (if on the same computer)
-local Shared2 = Resources:GetLocalTable("Shared2") -- different table
-
--- The keys don't have to be strings
-local PlayerData = Resources:GetLocalTable(Players.Validark)
-```
-
-This function is also used internally, and can be used to access the internal values of `Resources`. For example:
+Although most people shouldn't need to access the internals of `Resources`, `GetLocalTable` is used internally and can be used to do just that. For example:
 
 ```lua
 -- Cached results from `LoadLibrary` by string
-local LoadLibraries = Resources:GetLocalTable("LoadedLibraries")
+local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
 -- e.g. {Maid = [require(ReplicatedStorage.Resources.Libraries.Maid)]}
 ```
 
-All other hash tables internally used by `Resources` have keys identical to the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder) names of the folders within `Resources` or `LOCALSTORAGE`.
+All other hash tables internally used by `Resources` have keys identical to the [Folder](http://wiki.roblox.com/index.php?title=API:Class/Folder)-[names](http://wiki.roblox.com/index.php?title=API:Class/Instance/Name) of their generated folders within `Resources`.
 
 ```lua
 -- Hash table of all Libraries accessible to this machine (server-only and replicated)
+-- This will be empty on the client before `GetLibrary` or `LoadLibrary`
+-- are called for the first time on the client
 local LibraryObjects = Resources:GetLocalTable("Libraries")
+-- This retrieves the cache used by Resources:GetLibrary()
 -- e.g. {Maid = [ReplicatedStorage.Resources.Libraries.Maid]}
 
 
@@ -197,11 +209,13 @@ local RemoteEvents = Resources:GetLocalTable("RemoteEvents")
 -- e.g. {Chatted = [ReplicatedStorage.Resources.RemoteEvents.Chatted]}
 
 
--- Local tables are prefixed by "Local"
-local BindableEvents = Resources:GetLocalTable("LocalBindableEvents")
--- Hash table of all BindableEvents ever accessed through Resources:GetLocalBindableEvents(),
--- as well as any that get existed when Resources.GetLocalBindableEvents was first indexed
--- e.g. {Attacked = [LOCALSTORAGE.Resources.BindableEvents.Attacked]}
+local LocalBindableEvents = Resources:GetLocalTable("LocalBindableEvents")
+-- LOCALSTORAGE caches are prefixed by "Local", since there is no `GetLocalLocalTable`
+-- This retrieves the cache used by Resources:GetLocalBindableEvent()
+
+for RemoteName, RemoteObject in pairs(RemoteEvents) do
+	print(RemoteName, "\t\t", RemoteObject:GetFullName())
+end
 ```
 
 ## Ideas
@@ -231,4 +245,10 @@ local ShopUI = Resources:GetUserInterface("Shop")
 ```
 
 ## Contact
-If you have any questions, concerns, or feature requests, feel free to [message Validark on roblox](https://www.roblox.com/messages/compose?recipientId=2966752). There is also a dedicated issues tab at the top of this page, should you feel inclined to use that. Please send all hatemail and/or unsavory requests to [devSparkle](https://www.roblox.com/messages/compose?recipientId=1631699).
+If you have any questions, concerns, or feature requests, feel free to [send me a message on roblox](https://www.roblox.com/messages/compose?recipientId=2966752) or click the discord link below. There is also a dedicated issues tab at the top of this page, should you feel inclined to use that. Please send me links to your projects using this code! I would also appreciate being given credit!
+
+<div align="left">
+	<a href="https://discord.gg/2kXpuvb">
+		<img src="https://discordapp.com/assets/94db9c3c1eba8a38a1fcf4f223294185.png" alt="Discord" width=200 height=68 />
+	</a>
+</div>
