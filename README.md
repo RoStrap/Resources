@@ -1,5 +1,4 @@
 # Resources
-
 [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-manager and library-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to simplify the loading of libraries and standardize the API for networking resources between the client and server.
 
 ## Set-up
@@ -102,7 +101,7 @@ local Chatted = Resources:GetRemoteEvent("Chatted")
 
 |GetRemoteEvent("Chatted")|⇨|GetFolder("RemoteEvents")|⇨|`ROOT`|
 |:-----:|:-----:|:-----:|:-----:|:-----:|
-|Gets RemoteEvent `Chatted` in|**⇨**|Gets Folder `RemoteEvents` in|**⇨**|`ReplicatedStorage.Resources`|
+|RemoteEvent `Chatted` in|**⇨**|Folder `RemoteEvents` in|**⇨**|`ReplicatedStorage.Resources`|
 
 ![](https://user-images.githubusercontent.com/15217173/38775951-d6bfbeee-404b-11e8-8396-9666a0b20b98.png)
 
@@ -112,7 +111,7 @@ local Chatted = Resources:GetRemoteEvent("Chatted")
 local ClientLoaded = Resources:GetRemoteFunction("ClientLoaded")
 ```
 
-In fact, `Resources` can also manage instance types that aren't instantiable by `Instance.new`. However, **they must be preinstalled into `Resources` and will not be generated at run-time**. This allows you to do things like the following:
+In fact, `Resources` can also manage instance types that aren't instantiable by `Instance.new`. However, these **instances must be preinstalled in the locations in which they would otherwise be instantiated and will not be generated at run-time**. This allows you to do things like the following:
 
 |```local Falchion = Resources:GetSword("Falchion")```|
 |:-----:|
@@ -163,9 +162,6 @@ Here is what the above code would do if ran by the server versus what it would d
 |![](https://user-images.githubusercontent.com/15217173/38918583-6a9dcf50-42ab-11e8-8dbd-a165595af63f.png)|![](https://user-images.githubusercontent.com/15217173/38918817-00857d1a-42ac-11e8-9a3e-3176a2cb65b0.png)|
 
 ###### Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo. `LOCALSTORAGE` is typically just for `GetLocalBindableEvent` calls and having a place to store server-only Libraries, which are under `GetLocalFolder("Resources")`
-
-## Pre-installing Objects
-As mentioned before, if you want to use methods with custom ClassNames (not instantiable by [Instance.new](http://wiki.roblox.com/index.php?title=Instance_(Data_Structure))) then you will need to pre-install them (in the locations in which they would otherwise be instantiated).
 
 ## Internals
 The GetFunction generator practically looks like this (but is more efficient and expandable):
