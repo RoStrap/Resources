@@ -205,7 +205,7 @@ local LibraryObjects = Resources:GetLocalTable("Libraries")
 -- Procedurally generated tables:
 local RemoteEvents = Resources:GetLocalTable("RemoteEvents")
 -- This is a hash table of all RemoteEvents ever accessed through GetRemoteEvent() on this machine,
--- as well as all RemoteEvents that existed when Resources.GetRemoteEvent was first indexed
+-- as well as all RemoteEvents that existed when Resources.GetRemoteEvent was first called
 -- e.g. {Chatted = [ReplicatedStorage.Resources.RemoteEvents.Chatted]}
 
 
