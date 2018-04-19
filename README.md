@@ -1,5 +1,5 @@
 # Resources
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource-manager and library-loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to streamline the loading of libraries and standardize the API for networking instances between the client and server.
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource manager and library loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to streamline the loading of libraries and standardize the API for networking instances between the client and server.
 
 ## Set-up
 [Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is automatically installed when you setup using the plugin, which can installed after clicking the logo [below](https://www.roblox.com/library/725884332/RoStrap):
@@ -32,12 +32,12 @@ local Shared = Resources:GetLocalTable("Shared")
 
 ## Terminology
 ### Library
-A *Library* is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) **and its descendants**. In the following image, there are only **two** Libraries; `Keys` and `Rbx_CustomFont`. These two will be accessible through the `LoadLibrary` function and **their descendants will not be**, though parent Libraries may internally utilize children through, for example, `require(script.Roboto)`.
+A *Library* is constituted of a [ModuleScript](http://wiki.roblox.com/index.php?title=API:Class/ModuleScript) **and its descendants**. In the following image, there are only **two** Libraries: `Keys` and `Rbx_CustomFont`. These two will be accessible through the `LoadLibrary` function and **their descendants will not be**, though parent Libraries may internally utilize children. For example, `require(script.Roboto)`.
 
 ![](https://user-images.githubusercontent.com/15217173/38775144-25b833f0-4038-11e8-9545-952f1634148b.png)
 
 ### Local
-*Local* in a function-name refers to **a function that does not replicate** across the client-server boundary.
+*Local* in a function name refers to **a function that does not replicate** across the client-server boundary.
 
 ## API
 All functions within `Resources` take in parameter `string Name`.
@@ -161,7 +161,7 @@ Here is what the above code would do if ran by the server versus what it would d
 |:----:|:----:|
 |![](https://user-images.githubusercontent.com/15217173/38918583-6a9dcf50-42ab-11e8-8dbd-a165595af63f.png)|![](https://user-images.githubusercontent.com/15217173/38918817-00857d1a-42ac-11e8-9a3e-3176a2cb65b0.png)|
 
-###### Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo. `LOCALSTORAGE` is typically just for `GetLocalBindableEvent` calls and having a place to store server-only Libraries, which are under `GetLocalFolder("Resources")`
+###### Note: In Play-Solo Mode, all local objects will go under `ServerStorage`, as there is no difference between the client and server. If you use identical Local-function calls on the client and server, this could cause conflicts in Play-Solo. `LOCALSTORAGE` is typically just for `GetLocalBindableEvent` calls and having a place to store server-only Libraries, which are under `GetLocalFolder("Resources")`. Libraries will not be moved into `ReplicatedStorage` in Play-Solo.
 
 ## Internals
 The GetFunction generator practically looks like this (but is more efficient and expandable):
