@@ -1,4 +1,4 @@
--- RoStrap's Core Bootstrapper
+-- The core resource manager and library loader for RoStrap
 -- @author Validark
 
 local Resources = {}
