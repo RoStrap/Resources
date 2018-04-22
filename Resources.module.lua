@@ -27,8 +27,11 @@ local MakeGetterFunction do
 
 	local LocalResourcesLocation, LibraryRepository
 
-	local function GetFolder() return script end
-	local function GetLocalFolder() -- Temporary GetLocalFolder function; this will get overwritten
+	local function GetRootFolder()
+		return script
+	end
+
+	local function GetLocalRootFolder()
 		local Folder = LocalResourcesLocation:FindFirstChild("Resources") or Instance_new("Folder")
 		Folder.Name = "Resources"
 		Folder.Parent = LocalResourcesLocation
@@ -44,7 +47,7 @@ local MakeGetterFunction do
 
 			InstanceType, IsLocal = InstanceType:gsub("^Local", "", 1) -- Remove "Get" and "Local" prefixes from MethodName to isolate InstanceType
 			IsLocal = IsLocal == 1
-			FolderGetter = IsLocal and GetLocalFolder or GetFolder -- Determine whether Method is Local
+			FolderGetter = InstanceType == "Folder" and (IsLocal and GetLocalRootFolder or GetRootFolder) or IsLocal and Resources.GetLocalFolder or Resources.GetFolder -- Determine whether Method is Local
 
 			if InstanceType:byte(-1) == 121 then -- if last character is a 'y'
 				local Last = InstanceType:byte(-2)
@@ -108,9 +111,6 @@ local MakeGetterFunction do
 		return GetFunction
 	end
 
-	GetFolder = MakeGetterFunction(Resources, "GetFolder")
-	GetLocalFolder = MakeGetterFunction(Resources, "GetLocalFolder")
-
 	if not ServerSide then
 		local LocalPlayer repeat LocalPlayer = game:GetService("Players").LocalPlayer until LocalPlayer or not wait()
 		repeat LocalResourcesLocation = LocalPlayer:FindFirstChildOfClass("PlayerScripts") until LocalResourcesLocation or not wait()
@@ -123,7 +123,7 @@ local MakeGetterFunction do
 			local Modules = CollectionService:GetTagged(a == 1 and "ReplicatedLibraries" or "ServerLibraries") -- Assemble `Libraries` table
 			local ModuleCount = #Modules
 			if ModuleCount > 0 then
-				local Repository = ShouldReplicate and (a == 1 and GetFolder or GetLocalFolder)("Libraries")
+				local Repository = ShouldReplicate and MakeGetterFunction(Resources, a == 1 and "GetFolder" or "GetLocalFolder")("Libraries")
 				if not Libraries then
 					Libraries = Modules
 					Caches.Libraries = Modules
