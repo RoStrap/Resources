@@ -149,7 +149,7 @@ local MakeGetterFunction do
 	end
 
 	local TagLibraryFolder = script:FindFirstChild("LibraryTags") -- If Resources has a descendant named LibraryTags, each child will be a ModuleScript which handles Tags
-	if TagLibraryFolder then
+	if TagLibraryFolder then -- Almost nobody even uses this. Might remove...
 		local TagLibraries = TagLibraryFolder:GetChildren()
 		for a = 1, #TagLibraries do
 			local TagLibrary = TagLibraries[a]
@@ -162,7 +162,10 @@ local MakeGetterFunction do
 		end
 	end
 
-	if ShouldReplicate and LibraryRepository then LibraryRepository = LibraryRepository:Destroy() end
+	if ShouldReplicate and LibraryRepository then
+		LibraryRepository:Destroy()
+		LibraryRepository = nil
+	end
 end
 
 local require = require
