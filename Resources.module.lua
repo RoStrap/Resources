@@ -169,8 +169,7 @@ local MakeGetterFunction do
 end
 
 local require = require
-local LoadedLibraries = {}
-Caches.LoadedLibraries = LoadedLibraries
+local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
