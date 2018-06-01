@@ -113,48 +113,54 @@ if not ServerSide then
 else
 	LocalResourcesLocation = game:GetService("ServerStorage")
 	local LibraryRepository = LocalResourcesLocation:FindFirstChild("Repository") or game:GetService("ServerScriptService"):FindFirstChild("Repository")
-	local ShouldReplicate = ServerSide and not RunService:IsClient()
-	local ReplicatedLibraries = Resources:GetLocalTable("Libraries")
-	local Descendants = LibraryRepository:GetDescendants()
-	local i, NumDescendants = 0, #Descendants
-	local ServerLibraries = {}
 
-	while i < NumDescendants do
-		i = i + 1
-		local Object = Descendants[i]
+	if LibraryRepository then
+		-- If Folder `Repository` exists, move all Libraries over to ReplicatedStorage
+		-- unless if they have "Server" in their name or in the name of a parent folder
 
-		if Object.ClassName == "ModuleScript" then
-			while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Object) do i = i + 1 end
-			if ShouldReplicate then Object.Parent = Object.Name:find("Server", 1, true) and Resources:GetLocalFolder("Libraries") or Resources:GetFolder("Libraries") end
-			ReplicatedLibraries[Object.Name] = ReplicatedLibraries[Object.Name] and error("[Resources] Duplicate Libraries named \"" .. Object.Name .. "\". Overshadowing is only permitted when a ServerLibrary overshadows a ReplicatedLibrary", 0) or Object
-		elseif Object.ClassName == "Folder" then
-			if Object.Name:find("Server", 1, true) then
-				local Descendant = Descendants[i + 1]
+		local ShouldReplicate = ServerSide and not RunService:IsClient()
+		local ReplicatedLibraries = Resources:GetLocalTable("Libraries")
+		local Descendants = LibraryRepository:GetDescendants()
+		local i, NumDescendants = 0, #Descendants
+		local ServerLibraries = {}
 
-				while i < NumDescendants and Descendant:IsDescendantOf(Object) do
-					if Descendant.ClassName == "ModuleScript" then
-						while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Descendant) do i = i + 1 end
-						if ShouldReplicate then Descendant.Parent = Resources:GetLocalFolder("Libraries")
-						elseif ReplicatedLibraries[Descendant.Name] then warn("[Resources] In the absence of a client, the client-version of", Descendant.Name, "will be inaccessible.") end
-						ServerLibraries[Descendant.Name] = ServerLibraries[Descendant.Name] and error("[Resources] Duplicate Libraries named \"" .. Descendant.Name .. "\". Overshadowing is only permitted when a ServerLibrary overshadows a ReplicatedLibrary", 0) or Descendant
-					elseif Descendant.ClassName ~= "Folder" then
-						error("Found object within Repository which is neither Folder nor Library")
+		while i < NumDescendants do
+			i = i + 1
+			local Object = Descendants[i]
+
+			if Object.ClassName == "ModuleScript" then
+				while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Object) do i = i + 1 end
+				if ShouldReplicate then Object.Parent = Object.Name:find("Server", 1, true) and Resources:GetLocalFolder("Libraries") or Resources:GetFolder("Libraries") end
+				ReplicatedLibraries[Object.Name] = ReplicatedLibraries[Object.Name] and error("[Resources] Duplicate Libraries named \"" .. Object.Name .. "\". Overshadowing is only permitted when a server-only library overshadows a replicated library", 0) or Object
+			elseif Object.ClassName == "Folder" then
+				if Object.Name:find("Server", 1, true) then
+					local Descendant = Descendants[i + 1]
+
+					while i < NumDescendants and Descendant:IsDescendantOf(Object) do
+						if Descendant.ClassName == "ModuleScript" then
+							while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Descendant) do i = i + 1 end
+							if ShouldReplicate then Descendant.Parent = Resources:GetLocalFolder("Libraries")
+							elseif ReplicatedLibraries[Descendant.Name] then warn("[Resources] In the absence of a client, the client-version of", Descendant.Name, "will be inaccessible.") end
+							ServerLibraries[Descendant.Name] = ServerLibraries[Descendant.Name] and error("[Resources] Duplicate Libraries named \"" .. Descendant.Name .. "\". Overshadowing is only permitted when a server-only library overshadows a replicated library", 0) or Descendant
+						elseif Descendant.ClassName ~= "Folder" then
+							error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. Descendant.ClassName .. " " .. Descendant:GetFullName(), 0)
+						end
+						i = i + 1
+						Descendant = Descendants[i + 1]
 					end
-					i = i + 1
-					Descendant = Descendants[i + 1]
 				end
+			else
+				error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. Object.ClassName .. " " .. Object:GetFullName(), 0)
 			end
-		else
-			error("Found object within Repository which is neither Folder nor Library")
 		end
-	end
 
-	for Name, Library in next, ServerLibraries do
-		ReplicatedLibraries[Name] = Library
-	end
+		for Name, Library in next, ServerLibraries do
+			ReplicatedLibraries[Name] = Library
+		end
 
-	Metatable.__index(Resources, "GetLibrary", Resources:GetFolder("Libraries")) -- We do this so it doesn't cache things returned by a GetChildren (and overwrite server-only names)
-	if ShouldReplicate and LibraryRepository then LibraryRepository:Destroy() end
+		Metatable.__index(Resources, "GetLibrary", Resources:GetFolder("Libraries")) -- We do this so it doesn't cache things returned by a GetChildren (and overwrite server-only libraries)
+		if ShouldReplicate then LibraryRepository:Destroy() end
+	end
 end
 
 local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
