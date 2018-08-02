@@ -14,7 +14,7 @@ insert_final_newline = true
 [*.lua]
 charset = utf-8
 indent_style = tab
-indent_size = 4
+indent_size = 8
 trim_trailing_whitespace = true
 
 [*.md]
