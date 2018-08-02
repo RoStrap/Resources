@@ -1,4 +1,4 @@
--- The core resource manager and library loader for RoStrap designed to streamline the retrieval and networking of resources
+-- The core resource manager and library loader for RoStrap
 -- @author Validark
 
 local Metatable = {}
