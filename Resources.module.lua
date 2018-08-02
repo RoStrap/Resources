@@ -1,4 +1,4 @@
--- The core resource manager and library loader for RoStrap
+-- The core resource manager and library loader for RoStrap designed to streamline the retrieval and networking of resources
 -- @author Validark
 
 local Metatable = {}
@@ -20,7 +20,10 @@ end
 local RunService = game:GetService("RunService")
 local ServerSide = RunService:IsServer()
 local Instance_new, type, require = Instance.new, type, require
-local InstantiableInstances = {Folder = true; RemoteEvent = true; BindableEvent = true; RemoteFunction = true; BindableFunction = true; Library = false}
+local InstantiableInstances = {
+	Folder = true; RemoteEvent = true; BindableEvent = true;
+	RemoteFunction = true; BindableFunction = true; Library = false;
+}
 local LocalResourcesLocation
 
 local function GetRootFolder()
@@ -87,7 +90,8 @@ function Metatable:__index(MethodName, Folder)
 		local Object = Cache[InstanceName]
 
 		if not Object then
-			Object = not IsLocal and not ServerSide	and (Folder:WaitForChild(InstanceName, 5) or warn("[Resources] Make sure to require \"Resources\" on the Server")
+			Object = not IsLocal and not ServerSide	and (Folder:WaitForChild(InstanceName, 5)
+				or warn("[Resources] Make sure to require \"Resources\" on the Server. Perhaps require this (if applicable): ", (debug.traceback():reverse():match("%d+ eniL ,(%b'')") or ""):reverse())
 				or Folder:WaitForChild(InstanceName)) or Folder:FindFirstChild(InstanceName)
 
 			if not Object then
@@ -114,6 +118,14 @@ else
 	LocalResourcesLocation = game:GetService("ServerStorage")
 	local LibraryRepository = LocalResourcesLocation:FindFirstChild("Repository") or game:GetService("ServerScriptService"):FindFirstChild("Repository")
 
+	local function CacheLibrary(Storage, Library)
+		if Storage[Library.Name] then
+			error("[Resources] Duplicate Libraries Found:\n\t" .. Storage[Library.Name]:GetFullName() .. "\n\t" .. Library:GetFullName() .. "\nOvershadowing is only permitted when a server-only library overshadows a replicated library", 0)
+		else
+			Storage[Library.Name] = Library
+		end
+	end
+
 	if LibraryRepository then
 		-- If Folder `Repository` exists, move all Libraries over to ReplicatedStorage
 		-- unless if they have "Server" in their name or in the name of a parent folder
@@ -130,18 +142,29 @@ else
 
 			if Object.ClassName == "ModuleScript" then
 				while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Object) do i = i + 1 end
-				if ShouldReplicate then Object.Parent = Object.Name:find("Server", 1, true) and Resources:GetLocalFolder("Libraries") or Resources:GetFolder("Libraries") end
-				ReplicatedLibraries[Object.Name] = ReplicatedLibraries[Object.Name] and error("[Resources] Duplicate Libraries named \"" .. Object.Name .. "\". Overshadowing is only permitted when a server-only library overshadows a replicated library", 0) or Object
+
+				if ShouldReplicate then
+					Object.Parent = Object.Name:find("Server", 1, true) and Resources:GetLocalFolder("Libraries") or Resources:GetFolder("Libraries")
+				end
+
+				CacheLibrary(ReplicatedLibraries, Object)
 			elseif Object.ClassName == "Folder" then
 				if Object.Name:find("Server", 1, true) then
 					local Descendant = Descendants[i + 1]
 
 					while i < NumDescendants and Descendant:IsDescendantOf(Object) do
 						if Descendant.ClassName == "ModuleScript" then
-							while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Descendant) do i = i + 1 end
-							if ShouldReplicate then Descendant.Parent = Resources:GetLocalFolder("Libraries")
-							elseif ReplicatedLibraries[Descendant.Name] then warn("[Resources] In the absence of a client, the client-version of", Descendant.Name, "will be inaccessible.") end
-							ServerLibraries[Descendant.Name] = ServerLibraries[Descendant.Name] and error("[Resources] Duplicate Libraries named \"" .. Descendant.Name .. "\". Overshadowing is only permitted when a server-only library overshadows a replicated library", 0) or Descendant
+							while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Descendant) do
+								i = i + 1
+							end
+
+							if ShouldReplicate then
+								Descendant.Parent = Resources:GetLocalFolder("Libraries")
+							elseif ReplicatedLibraries[Descendant.Name] then
+								warn("[Resources] In the absence of a client, the client-version of", Descendant.Name, "will be inaccessible.")
+							end
+
+							CacheLibrary(ServerLibraries, Descendant)
 						elseif Descendant.ClassName ~= "Folder" then
 							error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. Descendant.ClassName .. " " .. Descendant:GetFullName(), 0)
 						end
@@ -159,7 +182,10 @@ else
 		end
 
 		Metatable.__index(Resources, "GetLibrary", Resources:GetFolder("Libraries")) -- We do this so it doesn't cache things returned by a GetChildren (and overwrite server-only libraries)
-		if ShouldReplicate then LibraryRepository:Destroy() end
+
+		if ShouldReplicate then
+			LibraryRepository:Destroy()
+		end
 	end
 end
 
