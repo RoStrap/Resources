@@ -190,13 +190,25 @@ else
 end
 
 local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
+local CurrentlyLoading = {}
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
 	local Data = LoadedLibraries[LibraryName]
 
 	if Data == nil then
+		local NumLoading = #CurrentlyLoading
+		CurrentlyLoading[NumLoading + 1] = LibraryName
+
+		for i = 1, NumLoading do
+			if CurrentlyLoading[i] == LibraryName then
+				error("[Resources] Attempt to do circular library requiring: " .. table.concat(CurrentlyLoading, " -> "))
+			end
+		end
+
 		Data = require(Resources:GetLibrary(LibraryName))
+
+		CurrentlyLoading[NumLoading + 1] = nil
 		LoadedLibraries[LibraryName] = Data
 	end
 
