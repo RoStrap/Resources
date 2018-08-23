@@ -190,25 +190,43 @@ else
 end
 
 local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
-local CurrentlyLoading = {}
+local CurrentlyLoading = {} -- This is a hash which functions as a kind of linked-list history of [Script who Loaded] -> LibraryName
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
 	local Data = LoadedLibraries[LibraryName]
 
 	if Data == nil then
-		local NumLoading = #CurrentlyLoading
-		CurrentlyLoading[NumLoading + 1] = LibraryName
+		local CallerName = getfenv(2).script
+		CallerName = CallerName and CallerName.Name or {} -- If called from command bar, use table as a reference (never concatenated)
 
-		for i = 1, NumLoading do
-			if CurrentlyLoading[i] == LibraryName then
-				error("[Resources] Attempt to do circular library requiring: " .. table.concat(CurrentlyLoading, " -> "))
+		CurrentlyLoading[CallerName] = LibraryName
+
+		local Current = LibraryName
+		local Count = 0
+
+		while Current do
+			Count = Count + 1
+			Current = CurrentlyLoading[Current]
+
+			if Current == LibraryName then
+				local String = Current
+
+				for _ = 1, Count do
+					Current = CurrentlyLoading[Current]
+					String = String .. " -> " .. Current
+				end
+
+				error("[Resources] Attempt to do circular library requiring: " .. String)
 			end
 		end
 
-		Data = require(Resources:GetLibrary(LibraryName))
+		Data = require(Resources:GetLibrary(LibraryName)) or false
 
-		CurrentlyLoading[NumLoading + 1] = nil
+		if CurrentlyLoading[CallerName] == LibraryName then
+			CurrentlyLoading[CallerName] = nil
+		end
+
 		LoadedLibraries[LibraryName] = Data
 	end
 
