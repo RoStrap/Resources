@@ -1,5 +1,5 @@
 # Resources
-[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.module.lua) is the core resource manager and library loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to streamline the loading of libraries and standardize the API for networking instances between the client and server. [All documentation is available on the offical RoStrap website](https://rostrap.github.io).
+[Resources](https://github.com/RoStrap/Resources/blob/master/Resources.lua) is the core resource manager and library loader for [RoStrap](https://www.roblox.com/library/725884332/RoStrap). It is designed to streamline the loading of libraries and standardize the API for networking instances between the client and server. [All documentation is available on the offical RoStrap website](https://rostrap.github.io).
 
 ## Contact
 If you have any questions, concerns, or feature requests, feel free to [send me a message on roblox](https://www.roblox.com/messages/compose?recipientId=2966752) or click the discord link below. There is also a dedicated issues tab at the top of this page, should you feel inclined to use that. Please send me links to your projects using this code! Please credit Validark if you use RoStrap!
