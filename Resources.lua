@@ -1,4 +1,4 @@
--- The core resource manager and library loader for RoStrap
+-- The core resource manager and library loader for RoStrap. It is designed to increase organization and streamline the retrieval and networking of resources.
 -- @author Validark
 
 local Metatable = {}
@@ -48,7 +48,7 @@ function Metatable:__index(MethodName, Folder)
 		IsLocal = IsLocal == 1
 		FolderGetter = InstanceType == "Folder" and (IsLocal and GetLocalRootFolder or GetRootFolder) or IsLocal and Resources.GetLocalFolder or Resources.GetFolder -- Determine whether Method is Local
 
-		if InstanceType:byte(-1) == 121 then -- if last character is a 'y'
+		if InstanceType:byte(-1) == 121 then -- if last character is a 'y', this is a simple gimmick but works well enough for me :D
 			local Last = InstanceType:byte(-2)
 			FolderName = Last ~= 97 and Last ~= 101 and Last ~= 105 and Last ~= 111 and Last ~= 117 and InstanceType:sub(1, -2) .. "ies" or InstanceType .. "s"
 		else
@@ -90,9 +90,11 @@ function Metatable:__index(MethodName, Folder)
 		local Object = Cache[InstanceName]
 
 		if not Object then
-			Object = not IsLocal and not ServerSide	and (Folder:WaitForChild(InstanceName, 5)
-				or warn("[Resources] Make sure to require \"Resources\" on the Server. Perhaps require this (if applicable): ", (debug.traceback():reverse():match("%d+ eniL ,(%b'')") or ""):reverse())
-				or Folder:WaitForChild(InstanceName)) or Folder:FindFirstChild(InstanceName)
+			Object = not IsLocal and not ServerSide	and (
+					Folder:WaitForChild(InstanceName, 5)
+					or warn("[Resources] Make sure to require \"Resources\" on the Server. Perhaps require this (if applicable): ", (debug.traceback():reverse():match("%d+ eniL ,(%b'')") or ""):reverse())
+					or Folder:WaitForChild(InstanceName)
+				) or Folder:FindFirstChild(InstanceName)
 
 			if not Object then
 				if not Instantiable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed within " .. Folder:GetFullName() .. ".", 2) end
@@ -118,9 +120,13 @@ else
 	LocalResourcesLocation = game:GetService("ServerStorage")
 	local LibraryRepository = LocalResourcesLocation:FindFirstChild("Repository") or game:GetService("ServerScriptService"):FindFirstChild("Repository")
 
-	local function CacheLibrary(Storage, Library)
+	local function CacheLibrary(Storage, Library, StorageName)
 		if Storage[Library.Name] then
-			error("[Resources] Duplicate Libraries Found:\n\t" .. Storage[Library.Name]:GetFullName() .. "\n\t" .. Library:GetFullName() .. "\nOvershadowing is only permitted when a server-only library overshadows a replicated library", 0)
+			error("[Resources] Duplicate " .. StorageName .. " Found:\n\t"
+				.. Storage[Library.Name]:GetFullName() .. " and \n\t"
+				.. Library:GetFullName()
+				.. "\nOvershadowing is only permitted when a server-only library overshadows a replicated library"
+			, 0)
 		else
 			Storage[Library.Name] = Library
 		end
@@ -131,53 +137,69 @@ else
 		-- unless if they have "Server" in their name or in the name of a parent folder
 
 		local ShouldReplicate = ServerSide and not RunService:IsClient()
-		local ReplicatedLibraries = Resources:GetLocalTable("Libraries")
-		local Descendants = LibraryRepository:GetDescendants()
-		local i, NumDescendants = 0, #Descendants
 		local ServerLibraries = {}
+		local ReplicatedLibraries = Resources:GetLocalTable("Libraries")
 
-		while i < NumDescendants do
-			i = i + 1
-			local Object = Descendants[i]
+		local function HandleFolderChildren(FolderChildren, ServerOnly)
+			for i = 1, #FolderChildren do
+				local Child = FolderChildren[i]
+				local ClassName = Child.ClassName
+				local ServerOnly = ServerOnly or Child.Name:find("Server", 1, true) and true or false
 
-			if Object.ClassName == "ModuleScript" then
-				while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Object) do i = i + 1 end
-
-				if ShouldReplicate then
-					Object.Parent = Object.Name:find("Server", 1, true) and Resources:GetLocalFolder("Libraries") or Resources:GetFolder("Libraries")
-				end
-
-				CacheLibrary(ReplicatedLibraries, Object)
-			elseif Object.ClassName == "Folder" then
-				if Object.Name:find("Server", 1, true) then
-					local Descendant = Descendants[i + 1]
-
-					while i < NumDescendants and Descendant:IsDescendantOf(Object) do
-						if Descendant.ClassName == "ModuleScript" then
-							while i < NumDescendants and Descendants[i + 1]:IsDescendantOf(Descendant) do
-								i = i + 1
-							end
-
-							if ShouldReplicate then
-								Descendant.Parent = Resources:GetLocalFolder("Libraries")
-							elseif ReplicatedLibraries[Descendant.Name] then
-								warn("[Resources] In the absence of a client, the client-version of", Descendant.Name, "will be inaccessible.")
-							end
-
-							CacheLibrary(ServerLibraries, Descendant)
-						elseif Descendant.ClassName ~= "Folder" then
-							error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. Descendant.ClassName .. " " .. Descendant:GetFullName(), 0)
+				if ClassName == "ModuleScript" then
+					if ServerOnly then
+						if ShouldReplicate then
+							Child.Parent = Resources:GetLocalFolder("Libraries")
 						end
-						i = i + 1
-						Descendant = Descendants[i + 1]
+
+						CacheLibrary(ServerLibraries, Child, "ServerLibraries")
+					else
+						if ShouldReplicate then
+							-- ModuleScripts which are not descendants of ServerOnly folders and do not have "Server" in name should be moved to Libraries
+							--	if there are descendants of the ModuleScript with "Server" in the name, we should copy the original for use on the server
+							--	and replicate a version with everything with "Server" in the name deleted
+
+							local ModuleDescendants = Child:GetDescendants()
+							local TemplateObject
+
+							-- Iterate through the ModuleScript's Descendants, deleting those with "Server" in the Name
+
+							for j = 1, #ModuleDescendants do
+								local Descendant = ModuleDescendants[j]
+
+								if Descendant.Name:find("Server", 1, true) then
+									if not TemplateObject then -- Before the first deletion, clone Child
+										TemplateObject = Child:Clone()
+									end
+
+									Descendant:Destroy()
+								end
+							end
+
+							if TemplateObject then -- If we want to replicate an object with Server descendants, move the server-version to LocalLibraries
+								TemplateObject.Parent = Resources:GetLocalFolder("Libraries")
+								CacheLibrary(ServerLibraries, TemplateObject, "ServerLibraries")
+							end
+
+							Child.Parent = Resources:GetFolder("Libraries") -- Replicate Child which may have had things deleted
+						end
+
+						CacheLibrary(ReplicatedLibraries, Child, "ReplicatedLibraries")
 					end
+				elseif ClassName == "Folder" then
+					HandleFolderChildren(Child:GetChildren(), ServerOnly)
+				else
+					error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. ClassName .. " " .. Child:GetFullName(), 0)
 				end
-			else
-				error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. Object.ClassName .. " " .. Object:GetFullName(), 0)
 			end
 		end
 
+		HandleFolderChildren(LibraryRepository:GetChildren(), false)
+
 		for Name, Library in next, ServerLibraries do
+			if not ShouldReplicate and ReplicatedLibraries[Name] then
+				warn("[Resources] In the absence of a client, the client-version of", Name, "will be inaccessible")
+			end
 			ReplicatedLibraries[Name] = Library
 		end
 
@@ -190,47 +212,63 @@ else
 end
 
 local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
-local CurrentlyLoading = {} -- This is a hash which functions as a kind of linked-list history of [Script who Loaded] -> LibraryName
+local CurrentlyLoading = {} -- This is a hash which functions as a kind of linked-list history of [Script who Loaded] -> Library
+local Nil = newproxy(false) -- How we store nil values
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
 	local Data = LoadedLibraries[LibraryName]
 
 	if Data == nil then
-		local CallerName = getfenv(2).script
-		CallerName = CallerName and CallerName.Name or {} -- If called from command bar, use table as a reference (never concatenated)
+		local Caller = getfenv(2).script or {Name = "Command bar"} -- If called from command bar, use table as a reference (never concatenated)
+		local Library = Resources:GetLibrary(LibraryName)
 
-		CurrentlyLoading[CallerName] = LibraryName
+		CurrentlyLoading[Caller] = Library
 
-		local Current = LibraryName
+		-- Check to see if this case occurs:
+		-- Library -> Stuff1 -> Stuff2 -> Library
+
+		-- WHERE CurrentlyLoading[Library] is Stuff1
+		-- and CurrentlyLoading[Stuff1] is Stuff2
+		-- and CurrentlyLoading[Stuff2] is Library
+
+		local Current = Library
 		local Count = 0
 
 		while Current do
 			Count = Count + 1
 			Current = CurrentlyLoading[Current]
 
-			if Current == LibraryName then
-				local String = Current
+			if Current == Library then
+				local String = Current.Name -- Get the string traceback
 
 				for _ = 1, Count do
 					Current = CurrentlyLoading[Current]
-					String = String .. " -> " .. Current
+					String = String .. " -> " .. Current.Name
 				end
 
-				error("[Resources] Attempt to do circular library requiring: " .. String)
+				error("[Resources] Circular dependency chain detected: " .. String)
 			end
 		end
 
-		Data = require(Resources:GetLibrary(LibraryName)) or false
+		Data = require(Library)
 
-		if CurrentlyLoading[CallerName] == LibraryName then
-			CurrentlyLoading[CallerName] = nil
+		if CurrentlyLoading[Caller] == Library then -- Thread-safe cleanup!
+			CurrentlyLoading[Caller] = nil
 		end
 
-		LoadedLibraries[LibraryName] = Data
+		if Data == nil then
+			Data = Nil
+		end
+
+		LoadedLibraries[LibraryName] = Data -- Cache by name for subsequent calls
 	end
 
-	return Data
+	if Data == Nil then
+		return nil
+	else
+		return Data
+	end
 end
 
 Metatable.__call = Resources.LoadLibrary
