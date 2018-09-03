@@ -144,7 +144,7 @@ else
 			for i = 1, #FolderChildren do
 				local Child = FolderChildren[i]
 				local ClassName = Child.ClassName
-				ServerOnly = ServerOnly or Child.Name:find("Server", 1, true) and true or false
+				local ServerOnly = ServerOnly or Child.Name:find("Server", 1, true) and true or false
 
 				if ClassName == "ModuleScript" then
 					if ServerOnly then
@@ -212,51 +212,51 @@ else
 end
 
 local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
-local CurrentlyLoading = {} -- This is a hash which functions as a kind of linked-list history of [Script who Loaded] -> LibraryName
+local CurrentlyLoading = {} -- This is a hash which functions as a kind of linked-list history of [Script who Loaded] -> Library
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
 	local Data = LoadedLibraries[LibraryName]
 
 	if Data == nil then
-		local CallerName = getfenv(2).script
-		CallerName = CallerName and CallerName.Name or {} -- If called from command bar, use table as a reference (never concatenated)
+		local Caller = getfenv(2).script or {Name = "Command bar"} -- If called from command bar, use table as a reference (never concatenated)
+		local Library = Resources:GetLibrary(LibraryName)
 
-		CurrentlyLoading[CallerName] = LibraryName
+		CurrentlyLoading[Caller] = Library
 
 		-- Check to see if this case occurs:
-		-- LibraryName -> Stuff1 -> Stuff2 -> LibraryName
+		-- Library -> Stuff1 -> Stuff2 -> Library
 
-		-- WHERE CurrentlyLoading[LibraryName] is Stuff1
+		-- WHERE CurrentlyLoading[Library] is Stuff1
 		-- and CurrentlyLoading[Stuff1] is Stuff2
-		-- and CurrentlyLoading[Stuff2] is LibraryName
+		-- and CurrentlyLoading[Stuff2] is Library
 
-		local Current = LibraryName
+		local Current = Library
 		local Count = 0
 
 		while Current do
 			Count = Count + 1
 			Current = CurrentlyLoading[Current]
 
-			if Current == LibraryName then
-				local String = Current -- Get the string traceback
+			if Current == Library then
+				local String = Current.Name -- Get the string traceback
 
 				for _ = 1, Count do
 					Current = CurrentlyLoading[Current]
-					String = String .. " -> " .. Current
+					String = String .. " -> " .. Current.Name
 				end
 
 				error("[Resources] Circular dependency chain detected: " .. String)
 			end
 		end
 
-		Data = require(Resources:GetLibrary(LibraryName)) or false
+		Data = require(Library) or false
 
-		if CurrentlyLoading[CallerName] == LibraryName then -- Thread-safe cleanup!
-			CurrentlyLoading[CallerName] = nil
+		if CurrentlyLoading[Caller] == Library then -- Thread-safe cleanup!
+			CurrentlyLoading[Caller] = nil
 		end
 
-		LoadedLibraries[LibraryName] = Data
+		LoadedLibraries[LibraryName] = Data -- Cache by name for subsequent calls
 	end
 
 	return Data
