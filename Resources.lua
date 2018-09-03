@@ -197,7 +197,7 @@ else
 		HandleFolderChildren(LibraryRepository:GetChildren(), false)
 
 		for Name, Library in next, ServerLibraries do
-			if ReplicatedLibraries[Name] then
+			if not ShouldReplicate and ReplicatedLibraries[Name] then
 				warn("[Resources] In the absence of a client, the client-version of", Name, "will be inaccessible")
 			end
 			ReplicatedLibraries[Name] = Library
