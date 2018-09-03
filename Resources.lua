@@ -213,6 +213,7 @@ end
 
 local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
 local CurrentlyLoading = {} -- This is a hash which functions as a kind of linked-list history of [Script who Loaded] -> Library
+local Nil = newproxy(false) -- How we store nil values
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
@@ -250,16 +251,24 @@ function Resources:LoadLibrary(LibraryName)
 			end
 		end
 
-		Data = require(Library) or false
+		Data = require(Library)
 
 		if CurrentlyLoading[Caller] == Library then -- Thread-safe cleanup!
 			CurrentlyLoading[Caller] = nil
 		end
 
+		if Data == nil then
+			Data = Nil
+		end
+
 		LoadedLibraries[LibraryName] = Data -- Cache by name for subsequent calls
 	end
 
-	return Data
+	if Data == Nil then
+		return nil
+	else
+		return Data
+	end
 end
 
 Metatable.__call = Resources.LoadLibrary
