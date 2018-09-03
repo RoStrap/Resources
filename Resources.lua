@@ -246,7 +246,7 @@ function Resources:LoadLibrary(LibraryName)
 					String = String .. " -> " .. Current
 				end
 
-				error("[Resources] Attempt to do circular library requiring: " .. String)
+				error("[Resources] Circular dependency chain detected: " .. String)
 			end
 		end
 
