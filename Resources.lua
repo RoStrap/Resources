@@ -1,4 +1,5 @@
--- The core resource manager and library loader for RoStrap. It is designed to increase organization and streamline the retrieval and networking of resources.
+-- The core resource manager and library loader for RoStrap
+-- It is designed to increase organization and streamline the retrieval and networking of resources.
 -- @author Validark
 
 local Metatable = {}
