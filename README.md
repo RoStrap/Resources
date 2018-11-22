@@ -9,3 +9,6 @@ If you have any questions, concerns, or feature requests, feel free to [send me 
 		<img src="https://discordapp.com/assets/94db9c3c1eba8a38a1fcf4f223294185.png" alt="Discord" width=200 height=68 />
 	</a>
 </div>
+
+## Games powered by RoStrap
+[![Aquaman: Home is Calling](https://i.imgur.com/88idY50.jpg)](https://www.roblox.com/games/2056459358/Aquaman-Home-is-Calling)
