@@ -162,14 +162,16 @@ else
 
 		local ServerLibraries = {}
 		local ReplicatedLibraries = Resources:GetLocalTable("Libraries")
+		local FoldersToHandle = {}
+		local FolderChildren, ExclusivelyServer = LibraryRepository:GetChildren(), false
 
-		local function HandleFolder(Folder, ExclusivelyServer)
-			local FolderChildren = Folder:GetChildren()
+		while FolderChildren do
+			FoldersToHandle[FolderChildren] = nil
 
 			for i = 1, #FolderChildren do
 				local Child = FolderChildren[i]
 				local ClassName = Child.ClassName
-				local ServerOnly = ExclusivelyServer or Child.Name:find("Server", 1, true)
+				local ServerOnly = ExclusivelyServer or (Child.Name:find("Server", 1, true) and true or false)
 
 				if ClassName == "ModuleScript" then
 					if ServerOnly then
@@ -206,14 +208,13 @@ else
 						CacheLibrary(ReplicatedLibraries, Child, "ReplicatedLibraries")
 					end
 				elseif ClassName == "Folder" then
-					HandleFolder(Child, ServerOnly)
+					FoldersToHandle[Child:GetChildren()] = ServerOnly
 				else
 					error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. ClassName .. " " .. Child:GetFullName(), 0)
 				end
 			end
+			FolderChildren, ExclusivelyServer = next(FoldersToHandle)
 		end
-
-		HandleFolder(LibraryRepository)
 
 		for Name, Library in next, ServerLibraries do
 			ReplicatedLibraries[Name] = Library
