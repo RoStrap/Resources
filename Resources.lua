@@ -46,22 +46,6 @@ function Resources:GetLocalTable(TableName) -- Returns a cached table by TableNa
 	return Table
 end
 
-local function HandleYieldedTraceback(Traceback)
-	local Caller = (Traceback:reverse():match("%d+ eniL ,(%b'')") or ""):reverse()
-
-	if Caller:sub(1, 9) == "'Players." then
-		Caller = "`require(ReplicatedStorage:WaitForChild(\"Resources\"))`"
-	else
-		Caller = Caller:match("%.([^%.]+)'")
-
-		if Caller then
-			Caller = "`Resources:LoadLibrary(\"" .. Caller .. "\")`"
-		end
-	end
-
-	warn("[Resources] Make sure a Script on the Server calls " .. Caller)
-end
-
 local function GetFirstChild(Folder, InstanceName, InstanceType)
 	local Object = Folder:FindFirstChild(InstanceName)
 
@@ -131,7 +115,14 @@ function Metatable:__index(MethodName)
 				Object = Folder:WaitForChild(InstanceName, 5)
 
 				if not Object then
-					HandleYieldedTraceback(debug.traceback())
+					local Caller = getfenv(0).script
+
+					if Caller and Caller.Parent and Caller.Parent.Parent == script then
+						warn("[Resources] Make sure a Script on the Server calls `Resources:LoadLibrary(\"" .. Caller.Name .. "\")`")
+					else
+						warn("[Resources] Make sure a Script on the Server calls `require(ReplicatedStorage:WaitForChild(\"Resources\"))`")
+					end
+
 					Object = Folder:WaitForChild(InstanceName)
 				end
 			end
@@ -241,7 +232,7 @@ function Resources:LoadLibrary(LibraryName)
 	local Data = LoadedLibraries[LibraryName]
 
 	if Data == nil then
-		local Caller = getfenv(2).script or {Name = "Command bar"} -- If called from command bar, use table as a reference (never concatenated)
+		local Caller = getfenv(0).script or {Name = "Command bar"} -- If called from command bar, use table as a reference (never concatenated)
 		local Library = Resources:GetLibrary(LibraryName)
 
 		CurrentlyLoading[Caller] = Library
