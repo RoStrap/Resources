@@ -1,10 +1,38 @@
 -- The core resource manager and library loader for RoStrap
 -- It is designed to increase organization and streamline the retrieval and networking of resources.
+-- @documentation https://rostrap.github.io/Resources/
+-- @source https://github.com/RoStrap/Resources/
 -- @author Validark
+
+local RunService = game:GetService("RunService")
 
 local Metatable = {}
 local Resources = setmetatable({}, Metatable)
 local Caches = {} -- All cached data within Resources is accessible through Resources:GetLocalTable()
+
+local Instance_new, type, require = Instance.new, type, require
+local LocalResourcesLocation
+
+local SERVER_SIDE = RunService:IsServer()
+local UNINSTANTIABLE_INSTANCES = setmetatable({
+	Folder = false; RemoteEvent = false; BindableEvent = false;
+	RemoteFunction = false; BindableFunction = false; Library = true;
+}, {
+	__index = function(self, InstanceType)
+		local Instantiable, GeneratedInstance = pcall(Instance_new, InstanceType)
+		local Uninstantiable
+
+		if Instantiable and GeneratedInstance then
+			GeneratedInstance:Destroy()
+			Uninstantiable = false
+		else
+			Uninstantiable = true
+		end
+
+		self[InstanceType] = Uninstantiable
+		return Uninstantiable
+	end;
+})
 
 function Resources:GetLocalTable(TableName) -- Returns a cached table by TableName, generating if non-existant
 	TableName = self ~= Resources and self or TableName
@@ -18,52 +46,43 @@ function Resources:GetLocalTable(TableName) -- Returns a cached table by TableNa
 	return Table
 end
 
-local RunService = game:GetService("RunService")
-local ServerSide = RunService:IsServer()
-local Instance_new, type, require = Instance.new, type, require
-local InstantiableInstances = {
-	Folder = true; RemoteEvent = true; BindableEvent = true;
-	RemoteFunction = true; BindableFunction = true; Library = false;
-}
-local LocalResourcesLocation
+local function GetFirstChild(Folder, InstanceName, InstanceType)
+	local Object = Folder:FindFirstChild(InstanceName)
 
-local function GetRootFolder()
-	return script
+	if not Object then
+		if UNINSTANTIABLE_INSTANCES[InstanceType] then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed within " .. Folder:GetFullName() .. ".", 2) end
+		Object = Instance_new(InstanceType)
+		Object.Name = InstanceName
+		Object.Parent = Folder
+	end
+
+	return Object
 end
 
-local function GetLocalRootFolder()
-	local Folder = LocalResourcesLocation:FindFirstChild("Resources") or Instance_new("Folder")
-	Folder.Name = "Resources"
-	Folder.Parent = LocalResourcesLocation
-	return Folder
-end
-
-function Metatable:__index(MethodName, Folder)
+function Metatable:__index(MethodName)
 	if type(MethodName) ~= "string" then error("[Resources] Attempt to index Resources with invalid key: string expected, got " .. typeof(MethodName), 2) end
+	if MethodName:sub(1, 3) ~= "Get" then error("[Resources] Methods should begin with \"Get\"", 2) end
+	local InstanceType = MethodName:sub(4)
 
-	local IsLocal, InstanceType, FolderGetter, FolderName, Instantiable, CacheName, Cache do -- Get Function Constants
-		InstanceType, IsLocal = MethodName:gsub("^Get", "", 1)
-		if IsLocal == 0 then error("[Resources] Methods should begin with \"Get\"", 2) end -- Make sure methods begin with "Get"
+	-- Set CacheName to ["RemoteEvent" .. "s"], or ["Librar" .. "ies"]
+	local a, b = InstanceType:byte(-2, -1) -- this is a simple gimmick but works well enough for all Roblox ClassNames :D
+	local CacheName = b == 121 and a ~= 97 and a ~= 101 and a ~= 105 and a ~= 111 and a ~= 117 and InstanceType:sub(1, -2) .. "ies" or InstanceType .. "s"
+	local IsLocal = InstanceType:sub(1, 5) == "Local"
+	local Cache, Folder, FolderGetter -- Function Constants
 
-		InstanceType, IsLocal = InstanceType:gsub("^Local", "", 1) -- Remove "Get" and "Local" prefixes from MethodName to isolate InstanceType
-		IsLocal = IsLocal == 1
-		FolderGetter = InstanceType == "Folder" and (IsLocal and GetLocalRootFolder or GetRootFolder) or IsLocal and Resources.GetLocalFolder or Resources.GetFolder -- Determine whether Method is Local
+	if IsLocal then -- Determine whether a method is local
+		InstanceType = InstanceType:sub(6)
 
-		if InstanceType:byte(-1) == 121 then -- if last character is a 'y', this is a simple gimmick but works well enough for me :D
-			local Last = InstanceType:byte(-2)
-			FolderName = Last ~= 97 and Last ~= 101 and Last ~= 105 and Last ~= 111 and Last ~= 117 and InstanceType:sub(1, -2) .. "ies" or InstanceType .. "s"
+		if InstanceType == "Folder" then
+			FolderGetter = function() return GetFirstChild(LocalResourcesLocation, "Resources", "Folder") end
 		else
-			FolderName = InstanceType .. "s" -- Set FolderName to ["RemoteEvent" .. "s"], or ["Librar" .. "ies"]
+			FolderGetter = Resources.GetLocalFolder
 		end
-
-		Instantiable = InstantiableInstances[InstanceType]
-		CacheName = IsLocal and "Local" .. FolderName or FolderName
-		if Folder then
-			Cache = Caches[CacheName]
-		elseif Instantiable == nil then -- This block will never run for most people
-			local GeneratedInstance
-			Instantiable, GeneratedInstance = pcall(Instance_new, InstanceType)
-			if Instantiable and GeneratedInstance then GeneratedInstance:Destroy() end
+	else
+		if InstanceType == "Folder" then
+			FolderGetter = function() return script end
+		else
+			FolderGetter = Resources.GetFolder
 		end
 	end
 
@@ -73,35 +92,39 @@ function Metatable:__index(MethodName, Folder)
 
 		if not Folder then
 			Cache = Caches[CacheName]
-			Folder = FolderGetter(FolderName)
-			local Children = Folder:GetChildren() -- Cache children of Folder into Table
+			Folder = FolderGetter(IsLocal and CacheName:sub(6) or CacheName)
 
 			if not Cache then
-				Cache = Children -- Recycling is good!
-				Caches[CacheName] = Children
-			end
+				Cache = Folder:GetChildren() -- Cache children of Folder into Table
+				Caches[CacheName] = Cache
 
-			for i = 1, #Children do
-				local Child = Children[i]
-				Cache[Child.Name] = Child
-				Children[i] = nil
+				for i = 1, #Cache do
+					local Child = Cache[i]
+					Cache[Child.Name] = Child
+					Cache[i] = nil
+				end
 			end
 		end
 
 		local Object = Cache[InstanceName]
 
 		if not Object then
-			Object = not IsLocal and not ServerSide	and (
-					Folder:WaitForChild(InstanceName, 5)
-					or warn("[Resources] Make sure to require \"Resources\" on the Server. Perhaps require this (if applicable): ", (debug.traceback():reverse():match("%d+ eniL ,(%b'')") or ""):reverse())
-					or Folder:WaitForChild(InstanceName)
-				) or Folder:FindFirstChild(InstanceName)
+			if SERVER_SIDE or IsLocal then
+				Object = GetFirstChild(Folder, InstanceName, InstanceType)
+			else
+				Object = Folder:WaitForChild(InstanceName, 5)
 
-			if not Object then
-				if not Instantiable then error("[Resources] " .. InstanceType .. " \"" .. InstanceName .. "\" is not installed within " .. Folder:GetFullName() .. ".", 2) end
-				Object = Instance_new(InstanceType)
-				Object.Name = InstanceName
-				Object.Parent = Folder
+				if not Object then
+					local Caller = getfenv(0).script
+
+					if Caller and Caller.Parent and Caller.Parent.Parent == script then
+						warn("[Resources] Make sure a Script on the Server calls `Resources:LoadLibrary(\"" .. Caller.Name .. "\")`")
+					else
+						warn("[Resources] Make sure a Script on the Server calls `require(ReplicatedStorage:WaitForChild(\"Resources\"))`")
+					end
+
+					Object = Folder:WaitForChild(InstanceName)
+				end
 			end
 
 			Cache[InstanceName] = Object
@@ -114,7 +137,7 @@ function Metatable:__index(MethodName, Folder)
 	return GetFunction
 end
 
-if not ServerSide then
+if not SERVER_SIDE then
 	local LocalPlayer repeat LocalPlayer = game:GetService("Players").LocalPlayer until LocalPlayer or not wait()
 	repeat LocalResourcesLocation = LocalPlayer:FindFirstChildOfClass("PlayerScripts") until LocalResourcesLocation or not wait()
 else
@@ -137,91 +160,79 @@ else
 		-- If Folder `Repository` exists, move all Libraries over to ReplicatedStorage
 		-- unless if they have "Server" in their name or in the name of a parent folder
 
-		local ShouldReplicate = ServerSide and not RunService:IsClient()
 		local ServerLibraries = {}
 		local ReplicatedLibraries = Resources:GetLocalTable("Libraries")
+		local FoldersToHandle = {}
+		local FolderChildren, ExclusivelyServer = LibraryRepository:GetChildren(), false
 
-		local function HandleFolderChildren(FolderChildren, ServerOnly)
+		while FolderChildren do
+			FoldersToHandle[FolderChildren] = nil
+
 			for i = 1, #FolderChildren do
 				local Child = FolderChildren[i]
 				local ClassName = Child.ClassName
-				local ServerOnly = ServerOnly or Child.Name:find("Server", 1, true) and true or false
+				local ServerOnly = ExclusivelyServer or (Child.Name:find("Server", 1, true) and true or false)
 
 				if ClassName == "ModuleScript" then
 					if ServerOnly then
-						if ShouldReplicate then
-							Child.Parent = Resources:GetLocalFolder("Libraries")
-						end
-
+						Child.Parent = Resources:GetLocalFolder("Libraries")
 						CacheLibrary(ServerLibraries, Child, "ServerLibraries")
 					else
-						if ShouldReplicate then
-							-- ModuleScripts which are not descendants of ServerOnly folders and do not have "Server" in name should be moved to Libraries
-							--	if there are descendants of the ModuleScript with "Server" in the name, we should copy the original for use on the server
-							--	and replicate a version with everything with "Server" in the name deleted
+						-- ModuleScripts which are not descendants of ServerOnly folders and do not have "Server" in name should be moved to Libraries
+						--	if there are descendants of the ModuleScript with "Server" in the name, we should copy the original for use on the server
+						--	and replicate a version with everything with "Server" in the name deleted
 
-							local ModuleDescendants = Child:GetDescendants()
-							local TemplateObject
+						local ModuleDescendants = Child:GetDescendants()
+						local TemplateObject
 
-							-- Iterate through the ModuleScript's Descendants, deleting those with "Server" in the Name
+						-- Iterate through the ModuleScript's Descendants, deleting those with "Server" in the Name
 
-							for j = 1, #ModuleDescendants do
-								local Descendant = ModuleDescendants[j]
+						for j = 1, #ModuleDescendants do
+							local Descendant = ModuleDescendants[j]
 
-								if Descendant.Name:find("Server", 1, true) then
-									if not TemplateObject then -- Before the first deletion, clone Child
-										TemplateObject = Child:Clone()
-									end
-
-									Descendant:Destroy()
+							if Descendant.Name:find("Server", 1, true) then
+								if not TemplateObject then -- Before the first deletion, clone Child
+									TemplateObject = Child:Clone()
 								end
-							end
 
-							if TemplateObject then -- If we want to replicate an object with Server descendants, move the server-version to LocalLibraries
-								TemplateObject.Parent = Resources:GetLocalFolder("Libraries")
-								CacheLibrary(ServerLibraries, TemplateObject, "ServerLibraries")
+								Descendant:Destroy()
 							end
-
-							Child.Parent = Resources:GetFolder("Libraries") -- Replicate Child which may have had things deleted
 						end
 
+						if TemplateObject then -- If we want to replicate an object with Server descendants, move the server-version to LocalLibraries
+							TemplateObject.Parent = Resources:GetLocalFolder("Libraries")
+							CacheLibrary(ServerLibraries, TemplateObject, "ServerLibraries")
+						end
+
+						Child.Parent = Resources:GetFolder("Libraries") -- Replicate Child which may have had things deleted
 						CacheLibrary(ReplicatedLibraries, Child, "ReplicatedLibraries")
 					end
 				elseif ClassName == "Folder" then
-					HandleFolderChildren(Child:GetChildren(), ServerOnly)
+					FoldersToHandle[Child:GetChildren()] = ServerOnly
 				else
 					error("[Resources] Instances within your Repository must be either a ModuleScript or a Folder, found: " .. ClassName .. " " .. Child:GetFullName(), 0)
 				end
 			end
+			FolderChildren, ExclusivelyServer = next(FoldersToHandle)
 		end
 
-		HandleFolderChildren(LibraryRepository:GetChildren(), false)
-
 		for Name, Library in next, ServerLibraries do
-			if not ShouldReplicate and ReplicatedLibraries[Name] then
-				warn("[Resources] In the absence of a client, the client-version of", Name, "will be inaccessible")
-			end
 			ReplicatedLibraries[Name] = Library
 		end
 
-		Metatable.__index(Resources, "GetLibrary", Resources:GetFolder("Libraries")) -- We do this so it doesn't cache things returned by a GetChildren (and overwrite server-only libraries)
-
-		if ShouldReplicate then
-			LibraryRepository:Destroy()
-		end
+		LibraryRepository:Destroy()
 	end
 end
 
 local LoadedLibraries = Resources:GetLocalTable("LoadedLibraries")
-local CurrentlyLoading = {} -- This is a hash which functions as a kind of linked-list history of [Script who Loaded] -> Library
-local Nil = newproxy(false) -- How we store nil values
+local CurrentlyLoading = {} -- This is a hash which LoadLibrary uses as a kind of linked-list history of [Script who Loaded] -> Library
 
 function Resources:LoadLibrary(LibraryName)
 	LibraryName = self ~= Resources and self or LibraryName
 	local Data = LoadedLibraries[LibraryName]
 
 	if Data == nil then
-		local Caller = getfenv(2).script or {Name = "Command bar"} -- If called from command bar, use table as a reference (never concatenated)
+		local Caller = getfenv(0).script or {Name = "Command bar"} -- If called from command bar, use table as a reference (never concatenated)
 		local Library = Resources:GetLibrary(LibraryName)
 
 		CurrentlyLoading[Caller] = Library
@@ -259,17 +270,13 @@ function Resources:LoadLibrary(LibraryName)
 		end
 
 		if Data == nil then
-			Data = Nil
+			error("[Resources] " .. LibraryName .. " must return a non-nil value. Return false instead.")
 		end
 
 		LoadedLibraries[LibraryName] = Data -- Cache by name for subsequent calls
 	end
 
-	if Data == Nil then
-		return nil
-	else
-		return Data
-	end
+	return Data
 end
 
 Metatable.__call = Resources.LoadLibrary
