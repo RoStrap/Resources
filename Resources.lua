@@ -118,9 +118,9 @@ function Metatable:__index(MethodName)
 					local Caller = getfenv(0).script
 
 					if Caller and Caller.Parent and Caller.Parent.Parent == script then
-						warn("[Resources] Make sure a Script on the Server calls `Resources:LoadLibrary(\"" .. Caller.Name .. "\")`")
+						warn("[Resources] Make sure a Script in ServerScriptService calls `Resources:LoadLibrary(\"" .. Caller.Name .. "\")`")
 					else
-						warn("[Resources] Make sure a Script on the Server calls `require(ReplicatedStorage:WaitForChild(\"Resources\"))`")
+						warn("[Resources] Make sure a Script in ServerScriptService calls `require(ReplicatedStorage:WaitForChild(\"Resources\"))`")
 					end
 
 					Object = Folder:WaitForChild(InstanceName)
