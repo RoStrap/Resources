@@ -120,7 +120,11 @@ function Metatable:__index(MethodName)
 					if Caller and Caller.Parent and Caller.Parent.Parent == script then
 						warn("[Resources] Make sure a Script in ServerScriptService calls `Resources:LoadLibrary(\"" .. Caller.Name .. "\")`")
 					else
-						warn("[Resources] Make sure a Script in ServerScriptService calls `require(ReplicatedStorage:WaitForChild(\"Resources\"))`")
+						if InstanceType == "Library" then
+							warn("[Resources] Did you forget to install " .. InstanceName .. "?")
+						elseif InstanceType == "Folder" then
+							warn("[Resources] Make sure a Script in ServerScriptService calls `require(ReplicatedStorage:WaitForChild(\"Resources\"))`")
+						end
 					end
 
 					Object = Folder:WaitForChild(InstanceName)
